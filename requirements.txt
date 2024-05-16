@@ -1,0 +1,5 @@
+facebook_business~=19.0.3
+PyQt6~=6.4.2
+requests~=2.31.0
+python-dateutil~=2.9.0.post0
+pandas~=2.2.2

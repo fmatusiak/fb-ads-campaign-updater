@@ -59,11 +59,11 @@ class FacebookAdsService:
 
     def updateCreativeAds(self, adCreativeBuilder: AdCreativeBuilder, data: dict) -> None:
         buildDataMappings = {
-            'singleHeaderName': 'singleHeaderNames',
-            'singleHeaderDescription': 'singleHeaderDescriptions',
-            'singleBasicDescription': 'singleBasicDescriptions',
-            'carouselHeader': 'carouselHeaderNames',
-            'carouselHeaderDescription': 'carouselHeaderDescriptions',
+            'single_header_name': 'single_header_names',
+            'single_header_description': 'single_header_descriptions',
+            'single_basic_description': 'single_basic_descriptions',
+            'carousel_header': 'carousel_header_names',
+            'carousel_header_description': 'carousel_header_descriptions',
             # Uncomment the lines below if needed
             # 'basicDescription': 'basicDescriptions',
             # 'shortDescription': 'shortDescriptions'

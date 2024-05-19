@@ -11,7 +11,7 @@
             </rect>
         </property>
         <property name="windowTitle">
-            <string>MainWindow</string>
+            <string>Facebook AD Boost</string>
         </property>
         <widget class="QWidget" name="centralwidget">
             <widget class="QWidget" name="gridLayoutWidget">
@@ -133,12 +133,15 @@
                 <property name="text">
                     <string>ZAKTUALIZUJ ZAZNACZONE KAMPANIE I PODMIEŃ DANE</string>
                 </property>
+                <property name="checked">
+                    <bool>true</bool>
+                </property>
             </widget>
             <widget class="QPushButton" name="loadFileButton">
                 <property name="geometry">
                     <rect>
-                        <x>90</x>
-                        <y>270</y>
+                        <x>100</x>
+                        <y>230</y>
                         <width>171</width>
                         <height>41</height>
                     </rect>
@@ -154,11 +157,11 @@
                     <string>WCZYTAJ PLIK EXCEL</string>
                 </property>
             </widget>
-            <widget class="QPushButton" name="pushButton_2">
+            <widget class="QPushButton" name="startButton">
                 <property name="geometry">
                     <rect>
-                        <x>90</x>
-                        <y>400</y>
+                        <x>100</x>
+                        <y>340</y>
                         <width>171</width>
                         <height>41</height>
                     </rect>
@@ -175,13 +178,19 @@
                 </property>
             </widget>
             <widget class="QPlainTextEdit" name="logTextEdit">
+                <property name="enabled">
+                    <bool>true</bool>
+                </property>
                 <property name="geometry">
                     <rect>
                         <x>10</x>
                         <y>480</y>
                         <width>1241</width>
-                        <height>121</height>
+                        <height>111</height>
                     </rect>
+                </property>
+                <property name="readOnly">
+                    <bool>true</bool>
                 </property>
             </widget>
             <widget class="QLabel" name="label_4">

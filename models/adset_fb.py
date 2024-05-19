@@ -5,24 +5,31 @@ from date_parser import DateParser
 
 class AdSetFb:
     def __init__(self, data):
+        self.__firstInit = False
         self.__data = data
 
     def getId(self):
         return self.__data.get('id')
 
     def setLongitude(self, longitude):
+        self.__initGeoLocations()
+
         targeting = self.__data.get(AdSet.Field.targeting)
         geoLocations = targeting.get('geo_locations', {})
 
         geoLocations['custom_locations'][0]['longitude'] = longitude
 
     def setLatitude(self, latitude):
+        self.__initGeoLocations()
+
         targeting = self.__data.get(AdSet.Field.targeting)
         geoLocations = targeting.get('geo_locations', {})
 
         geoLocations['custom_locations'][0]['latitude'] = latitude
 
     def setRadius(self, radius):
+        self.__initGeoLocations()
+
         targeting = self.__data.get(AdSet.Field.targeting)
         geoLocations = targeting.get('geo_locations', {})
 
@@ -40,22 +47,32 @@ class AdSetFb:
     def getData(self):
         return self.__data
 
+    def setData(self, data):
+        self.__data = data
+
     def update(self, api):
         try:
-            status = api.updateAdSet(self)
+            jsonResponse = api.updateAdSet(self)
 
-            if status.get("success"):
+            if "success" in jsonResponse and jsonResponse["success"]:
                 return True
             else:
                 raise Exception("Aktualizacja AdSet nie powiodła się.")
         except Exception as e:
             raise Exception("Wystąpił błąd z aktualizacją AdSet", e)
 
-    def __initCustomLocations(self, geoLocations):
-        customLocations = geoLocations.get('custom_locations', [])
+    def __initGeoLocations(self):
+        if not self.__firstInit:
+            targeting = self.__data.get(AdSet.Field.targeting, {})
 
-        if not customLocations:
-            geoLocations['custom_locations'] = [{
-                'country': 'PL',
-                'distance_unit': 'kilometer',
-            }]
+            geoLocations = {
+                'custom_locations': [{
+                    'country': 'PL',
+                    'distance_unit': 'kilometer',
+                }]
+            }
+
+            targeting['geo_locations'] = geoLocations
+            self.__data[AdSet.Field.targeting] = targeting
+
+            self.__firstInit = True

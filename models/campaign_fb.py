@@ -35,11 +35,14 @@ class CampaignFb:
     def getData(self):
         return self.__data
 
+    def setData(self, data):
+        self.__data = data
+
     def update(self, api):
         try:
-            status = api.updateCampaign(self)
+            jsonResponse = api.updateCampaign(self)
 
-            if status.get("success"):
+            if "success" in jsonResponse and jsonResponse["success"]:
                 return True
             else:
                 raise Exception("Aktualizacja kampanii nie powiodła się.")

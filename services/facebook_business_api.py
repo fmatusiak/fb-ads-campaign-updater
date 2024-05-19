@@ -73,7 +73,7 @@ class FacebookBusinessApi:
                 "Content-Type": "application/json"
             }
 
-            campaignData = campaignFb.getCampaignData()
+            campaignData = campaignFb.getData()
 
             response = requests.post(url, headers=headers, json=campaignData)
             response.raise_for_status()
@@ -133,7 +133,13 @@ class FacebookBusinessApi:
     # pobranie reklam z zestawu reklam
     def getAdsForCampaign(self, campaignId, statuses=None):
         try:
-            ads = AdSet(campaignId).get_ads(fields=['id', 'name', 'status', 'creative'])
+            ads = AdSet(campaignId).get_ads(fields={
+                Ad.Field.id,
+                Ad.Field.name,
+                Ad.Field.status,
+                Ad.Field.creative,
+                Ad.Field.adset_id
+            })
 
             if statuses:
                 return [ad for ad in ads if ad['status'] in statuses]
@@ -151,16 +157,14 @@ class FacebookBusinessApi:
         except Exception as e:
             raise Exception("Wystąpił błąd podczas Ad sets dla danej kampanii:", e)
 
-    def getAdSet(self, adId):
+    def getAdSet(self, adSetId):
         try:
-            adSet = AdSet(adId)
+            adSet = AdSet(adSetId)
             adSet.api_get(fields=[
+                AdSet.Field.id,
                 AdSet.Field.name,
                 AdSet.Field.targeting,
-                AdSet.Field.adlabels,
-                AdSet.Field.daily_budget,
-                AdSet.Field.start_time,
-                AdSet.Field.end_time,
+                AdSet.Field.end_time
             ])
 
             return AdSetFb(adSet.export_all_data())
@@ -179,24 +183,32 @@ class FacebookBusinessApi:
         except Exception as e:
             raise Exception("Wystąpił błąd podczas tworzenia reklamy:", e)
 
-    def attachNewCreativeAdToCreativeAd(self, newCreativeAdId, existsCreativeAdId):
+    def attachNewCreativeAdToCreativeAd(self, adId, newCreativeAdId):
         try:
-            url = f"https://graph.facebook.com/v19.0/{newCreativeAdId}"
+            url = f"https://graph.facebook.com/v19.0/{adId}?fields=creative"
+
+            headers = {
+                "Authorization": f"Bearer {self.config.getAccessToken()}",
+                "Content-Type": "application/json"
+            }
 
             data = {
                 "creative": {
-                    "creative_id": existsCreativeAdId
+                    "creative_id": newCreativeAdId
                 }
             }
 
-            response = requests.post(url, json=data)
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
 
-            if response.status_code == 200:
-                return response.json()
+            jsonResponse = response.json()
+
+            if "creative" in jsonResponse and jsonResponse["creative"]:
+                return True
             else:
-                return None
+                raise Exception("Aktualizacja kampanii nie powiodła się.")
         except Exception as e:
-            raise Exception("Wystapił błąd z przypięciem nowej reklamy do aktualnej reklamy")
+            raise Exception("Wystapił błąd z przypięciem nowej reklamy do aktualnej reklamy", e)
 
     def updateAdSet(self, adSetFb: AdSetFb):
         try:
@@ -222,7 +234,7 @@ class FacebookBusinessApi:
             AdCreative.Field.name,
             AdCreative.Field.object_story_spec,
             AdCreative.Field.asset_feed_spec,
-            AdCreative.Field.degrees_of_freedom_spec
+            AdCreative.Field.degrees_of_freedom_spec,
         })
 
         return adCreative.export_all_data()

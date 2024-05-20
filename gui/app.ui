@@ -1,237 +1,237 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>1265</width>
-    <height>645</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Facebook AD Boost</string>
-  </property>
-  <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="gridLayoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>341</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="0">
-      <widget class="QComboBox" name="businessComboBox"/>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>10</pointsize>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>WYBIERZ BIZNES</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="gridLayoutWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>90</y>
-      <width>341</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <layout class="QGridLayout" name="gridLayout_2">
-     <item row="1" column="0">
-      <widget class="QComboBox" name="adAccountsComboBox"/>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>10</pointsize>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>WYBIERZ KONTO REKLAMOWE (AD)</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="gridLayoutWidget_3">
-    <property name="geometry">
-     <rect>
-      <x>500</x>
-      <y>40</y>
-      <width>751</width>
-      <height>421</height>
-     </rect>
-    </property>
-    <layout class="QGridLayout" name="gridLayout_3">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>10</pointsize>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>DOSTĘPNE KAMPANIE</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QListView" name="campaignListView">
-       <property name="editTriggers">
-        <set>QAbstractItemView::SelectedClicked</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QRadioButton" name="radioButton">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>180</y>
-      <width>391</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-      <pointsize>10</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>ZAKTUALIZUJ ZAZNACZONE KAMPANIE I PODMIEŃ DANE</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="loadFileButton">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>230</y>
-      <width>171</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-      <pointsize>10</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>WCZYTAJ PLIK EXCEL</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="startButton">
-    <property name="geometry">
-     <rect>
-      <x>100</x>
-      <y>340</y>
-      <width>171</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-      <pointsize>10</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>START</string>
-    </property>
-   </widget>
-   <widget class="QPlainTextEdit" name="logTextEdit">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>480</y>
-      <width>1241</width>
-      <height>111</height>
-     </rect>
-    </property>
-    <property name="readOnly">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_4">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>460</y>
-      <width>49</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-      <pointsize>8</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>LOGI</string>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1265</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuAUTO_FB_BOOST">
-    <property name="title">
-     <string>WPISZ TUTAJ</string>
-    </property>
-   </widget>
-   <addaction name="menuAUTO_FB_BOOST"/>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
- </widget>
- <resources/>
- <connections/>
+    <class>MainWindow</class>
+    <widget class="QMainWindow" name="MainWindow">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>1265</width>
+                <height>645</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Facebook AD Boost</string>
+        </property>
+        <widget class="QWidget" name="centralwidget">
+            <widget class="QWidget" name="gridLayoutWidget">
+                <property name="geometry">
+                    <rect>
+                        <x>20</x>
+                        <y>20</y>
+                        <width>341</width>
+                        <height>51</height>
+                    </rect>
+                </property>
+                <layout class="QGridLayout" name="gridLayout">
+                    <item row="1" column="0">
+                        <widget class="QComboBox" name="businessComboBox"/>
+                    </item>
+                    <item row="0" column="0">
+                        <widget class="QLabel" name="label">
+                            <property name="font">
+                                <font>
+                                    <family>Arial</family>
+                                    <pointsize>10</pointsize>
+                                    <bold>true</bold>
+                                </font>
+                            </property>
+                            <property name="text">
+                                <string>WYBIERZ BIZNES</string>
+                            </property>
+                            <property name="alignment">
+                                <set>Qt::AlignCenter</set>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+            <widget class="QWidget" name="gridLayoutWidget_2">
+                <property name="geometry">
+                    <rect>
+                        <x>20</x>
+                        <y>90</y>
+                        <width>341</width>
+                        <height>51</height>
+                    </rect>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_2">
+                    <item row="1" column="0">
+                        <widget class="QComboBox" name="adAccountsComboBox"/>
+                    </item>
+                    <item row="0" column="0">
+                        <widget class="QLabel" name="label_2">
+                            <property name="font">
+                                <font>
+                                    <family>Arial</family>
+                                    <pointsize>10</pointsize>
+                                    <bold>true</bold>
+                                </font>
+                            </property>
+                            <property name="text">
+                                <string>WYBIERZ KONTO REKLAMOWE (AD)</string>
+                            </property>
+                            <property name="alignment">
+                                <set>Qt::AlignCenter</set>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+            <widget class="QWidget" name="gridLayoutWidget_3">
+                <property name="geometry">
+                    <rect>
+                        <x>500</x>
+                        <y>40</y>
+                        <width>751</width>
+                        <height>421</height>
+                    </rect>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_3">
+                    <item row="0" column="0">
+                        <widget class="QLabel" name="label_3">
+                            <property name="font">
+                                <font>
+                                    <family>Arial</family>
+                                    <pointsize>10</pointsize>
+                                    <bold>true</bold>
+                                </font>
+                            </property>
+                            <property name="text">
+                                <string>DOSTĘPNE KAMPANIE</string>
+                            </property>
+                            <property name="alignment">
+                                <set>Qt::AlignCenter</set>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="1" column="0">
+                        <widget class="QListView" name="campaignListView">
+                            <property name="editTriggers">
+                                <set>QAbstractItemView::SelectedClicked</set>
+                            </property>
+                        </widget>
+                    </item>
+                </layout>
+            </widget>
+            <widget class="QRadioButton" name="radioButton">
+                <property name="geometry">
+                    <rect>
+                        <x>30</x>
+                        <y>180</y>
+                        <width>391</width>
+                        <height>20</height>
+                    </rect>
+                </property>
+                <property name="font">
+                    <font>
+                        <family>Arial</family>
+                        <pointsize>10</pointsize>
+                        <bold>true</bold>
+                    </font>
+                </property>
+                <property name="text">
+                    <string>ZAKTUALIZUJ ZAZNACZONE KAMPANIE I PODMIEŃ DANE</string>
+                </property>
+                <property name="checked">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QPushButton" name="loadFileButton">
+                <property name="geometry">
+                    <rect>
+                        <x>100</x>
+                        <y>230</y>
+                        <width>171</width>
+                        <height>41</height>
+                    </rect>
+                </property>
+                <property name="font">
+                    <font>
+                        <family>Arial</family>
+                        <pointsize>10</pointsize>
+                        <bold>true</bold>
+                    </font>
+                </property>
+                <property name="text">
+                    <string>WCZYTAJ PLIK EXCEL</string>
+                </property>
+            </widget>
+            <widget class="QPushButton" name="startButton">
+                <property name="geometry">
+                    <rect>
+                        <x>100</x>
+                        <y>340</y>
+                        <width>171</width>
+                        <height>41</height>
+                    </rect>
+                </property>
+                <property name="font">
+                    <font>
+                        <family>Arial</family>
+                        <pointsize>10</pointsize>
+                        <bold>true</bold>
+                    </font>
+                </property>
+                <property name="text">
+                    <string>START</string>
+                </property>
+            </widget>
+            <widget class="QPlainTextEdit" name="logTextEdit">
+                <property name="enabled">
+                    <bool>true</bool>
+                </property>
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>480</y>
+                        <width>1241</width>
+                        <height>111</height>
+                    </rect>
+                </property>
+                <property name="readOnly">
+                    <bool>true</bool>
+                </property>
+            </widget>
+            <widget class="QLabel" name="label_4">
+                <property name="geometry">
+                    <rect>
+                        <x>10</x>
+                        <y>460</y>
+                        <width>49</width>
+                        <height>16</height>
+                    </rect>
+                </property>
+                <property name="font">
+                    <font>
+                        <family>Arial</family>
+                        <pointsize>8</pointsize>
+                        <bold>true</bold>
+                    </font>
+                </property>
+                <property name="text">
+                    <string>LOGI</string>
+                </property>
+            </widget>
+        </widget>
+        <widget class="QMenuBar" name="menubar">
+            <property name="geometry">
+                <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>1265</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <widget class="QMenu" name="menuAUTO_FB_BOOST">
+                <property name="title">
+                    <string>WPISZ TUTAJ</string>
+                </property>
+            </widget>
+            <addaction name="menuAUTO_FB_BOOST"/>
+        </widget>
+        <widget class="QStatusBar" name="statusbar"/>
+    </widget>
+    <resources/>
+    <connections/>
 </ui>

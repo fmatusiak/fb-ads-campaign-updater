@@ -59,7 +59,7 @@ class AdSetFb:
             else:
                 raise Exception("Aktualizacja AdSet nie powiodła się.")
         except Exception as e:
-            raise Exception("Wystąpił błąd z aktualizacją AdSet", e)
+            raise Exception("Aktualizacja AdSet nie powiodła się.", e)
 
     def __initGeoLocations(self):
         if not self.__firstInit:

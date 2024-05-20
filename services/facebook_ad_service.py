@@ -74,6 +74,7 @@ class FacebookAdsService:
 
     def createAndAttachNewCreativeAd(self, adAccountId: str, adCreativeBuilder: AdCreativeBuilder, adId: str) -> bool:
         adCreative = self.__api.createCreativeAd(adAccountId, adCreativeBuilder)
+
         return self.__api.attachNewCreativeAdToCreativeAd(adId, adCreative['id'])
 
     def updateAdSet(self, adSetId: str, data: dict) -> None:
@@ -97,10 +98,10 @@ class FacebookAdsService:
             adSetUpdated = adSet.update(self.__api)
 
             if not adSetUpdated:
-                raise Exception('Failed to update ad set')
+                raise Exception(f"Nie udało się zaktualizować AdSet")
 
         except Exception as e:
-            raise Exception(f"Wystapił błąd z aktualizacją AdSet {adSetId}: {e}")
+            raise Exception(f"Wystapił inny błąd z aktualizacją AdSet {adSetId}: {e}")
 
     def updateCampaign(self, campaignId: str, data: dict) -> None:
         try:

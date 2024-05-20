@@ -4,3 +4,5 @@ PyQt6==6.7.0
 PyQt6-sip==13.6.0
 python-dateutil==2.9.0.post0
 requests==2.31.0
+
+certifi~=2024.2.2

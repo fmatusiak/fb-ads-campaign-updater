@@ -128,7 +128,7 @@ class FacebookBusinessApi:
 
             return adAccounts
         except Exception as e:
-            raise Exception("Wystąpił błąd podczas pobierania ID konta reklamowego:", e)
+            raise Exception("Wystąpił błąd podczas pobierania kont reklamowych Ad:", e)
 
     # pobranie reklam z zestawu reklam
     def getAdsForCampaign(self, campaignId, statuses=None):
@@ -146,7 +146,7 @@ class FacebookBusinessApi:
             else:
                 return ads
         except Exception as e:
-            raise Exception("Wystąpił błąd podczas pobierania reklam dla danej kampanii:", e)
+            raise Exception("Wystąpił błąd podczas pobierania reklam Ads dla danej kampanii:", e)
 
     def getAd(self, adId):
         try:
@@ -155,7 +155,7 @@ class FacebookBusinessApi:
                 Ad.Field.targeting,
             })
         except Exception as e:
-            raise Exception("Wystąpił błąd podczas Ad sets dla danej kampanii:", e)
+            raise Exception("Wystąpił błąd podczas AdSets dla danej kampanii:", e)
 
     def getAdSet(self, adSetId):
         try:
@@ -169,7 +169,7 @@ class FacebookBusinessApi:
 
             return AdSetFb(adSet.export_all_data())
         except Exception as e:
-            raise Exception("Wystąpił błąd podczas pobierania zestawu reklam:", e)
+            raise Exception("Wystąpił błąd podczas pobierania zestawu reklam AdSet:", e)
 
     def createCreativeAd(self, adAccountId, adCreativeBuilder: AdCreativeBuilder):
         try:
@@ -181,7 +181,7 @@ class FacebookBusinessApi:
 
             return adCreative
         except Exception as e:
-            raise Exception("Wystąpił błąd podczas tworzenia reklamy:", e)
+            raise Exception("Wystąpił błąd podczas tworzenia reklamy CreativeAd:", e)
 
     def attachNewCreativeAdToCreativeAd(self, adId, newCreativeAdId):
         try:
@@ -206,7 +206,7 @@ class FacebookBusinessApi:
             if "creative" in jsonResponse and jsonResponse["creative"]:
                 return True
             else:
-                raise Exception("Aktualizacja kampanii nie powiodła się.")
+                raise Exception("Aktualizacja kampanii CreativeAd nie powiodła się.")
         except Exception as e:
             raise Exception("Wystapił błąd z przypięciem nowej reklamy do aktualnej reklamy", e)
 
@@ -226,15 +226,18 @@ class FacebookBusinessApi:
 
             return response.json()
         except Exception as e:
-            raise Exception("Wystąpił błąd podczas aktualizacji danych zestawu reklam:", e)
+            raise Exception("Wystąpił błąd podczas aktualizacji AdSet:", e)
 
     def getAdCreativeData(self, adCreativeId):
-        adCreative = AdCreative(adCreativeId)
-        adCreative.api_get(fields={
-            AdCreative.Field.name,
-            AdCreative.Field.object_story_spec,
-            AdCreative.Field.asset_feed_spec,
-            AdCreative.Field.degrees_of_freedom_spec,
-        })
+        try:
+            adCreative = AdCreative(adCreativeId)
+            adCreative.api_get(fields={
+                AdCreative.Field.name,
+                AdCreative.Field.object_story_spec,
+                AdCreative.Field.asset_feed_spec,
+                AdCreative.Field.degrees_of_freedom_spec,
+            })
 
-        return adCreative.export_all_data()
+            return adCreative.export_all_data()
+        except Exception as e:
+            raise Exception(f"Błąd podczas pobierania danych kreatywnej reklamy AdCreative: {e}")

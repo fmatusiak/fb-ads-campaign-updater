@@ -1,3 +1,6 @@
+import os
+import sys
+
 from PyQt6.QtCore import Qt, pyqtSignal, QThread
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtWidgets import QMainWindow, QFileDialog
@@ -34,13 +37,13 @@ class AdUpdateThread(QThread):
 
 class Window(QMainWindow):
     def __init__(self):
+        super().__init__()
+        self.initUI()
+
         self.ad_update_thread = None
         self.dt = []
 
         try:
-            super().__init__()
-            loadUi("gui/app.ui", self)
-
             config = Config('config.json')
             self.__facebookBusinessApi = FacebookBusinessApi(config)
             self.__adsService = FacebookAdsService(self.__facebookBusinessApi)
@@ -56,6 +59,13 @@ class Window(QMainWindow):
             self.campaignListView.clicked.connect(self.selectCampaignListView)
         except Exception as e:
             self.logError(str(e))
+
+    def initUI(self):
+        if hasattr(sys, "_MEIPASS"):
+            ui_path = os.path.join(sys._MEIPASS, "gui", "app.ui")
+        else:
+            ui_path = os.path.join("gui", "app.ui")
+        loadUi(ui_path, self)
 
     def selectCampaignListView(self, index):
         data = self.campaignListView.model().data(index, Qt.ItemDataRole.UserRole)
@@ -105,7 +115,14 @@ class Window(QMainWindow):
             self.logError(str(e))
 
     def onUpdateFinished(self):
+        self.fillCampaignsListView()
+
         self.log('KONIEC', color='green')
+        self.log(
+            'PAMIĘTAJ: API Facebooka może mieć ograniczenia. Jeśli aktualizacja nie powiodła się, spróbuj ponownie za kilka minut.',
+            color='orange')
+        self.log('Pamiętaj również, że po pomyślnej aktualizacji zaleca się odczekanie przed kolejną próbą.',
+                 color='orange')
 
         self.startButton.setText("Start")
         self.startButton.setDisabled(False)

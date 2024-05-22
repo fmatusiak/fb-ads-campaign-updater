@@ -1,3 +1,5 @@
+from facebook_business.adobjects.campaign import Campaign
+
 from models.ad_creative_builder import AdCreativeBuilder
 from services.facebook_business_api import FacebookBusinessApi
 from text_modifier import TextModifier
@@ -19,7 +21,7 @@ class FacebookAdsService:
             self.updateCampaign(campaignId, data)
 
         except Exception as e:
-            raise Exception(f"Wystapił błąd z aktualizacją Ads : {e}")
+            raise Exception(e)
 
     def processInputData(self, data: dict) -> dict:
         fields = [
@@ -50,12 +52,12 @@ class FacebookAdsService:
             creativeUpdatedResult = self.createAndAttachNewCreativeAd(adAccountId, adCreativeBuilder, adId)
 
             if not creativeUpdatedResult:
-                raise Exception('Failed to update creative')
+                raise Exception(f"Wystapił błąd z aktualizacją Ad {adId}")
 
             self.updateAdSet(adSetId, data)
 
         except Exception as e:
-            raise Exception(f"Wystapił błąd z aktualizacją Ad {adId}: {e}")
+            raise Exception(f"Wystapił inny błąd z aktualizacją Ad: {e}")
 
     def updateCreativeAds(self, adCreativeBuilder: AdCreativeBuilder, data: dict) -> None:
         buildDataMappings = {
@@ -64,9 +66,6 @@ class FacebookAdsService:
             'single_basic_description': 'single_basic_descriptions',
             'carousel_header': 'carousel_header_names',
             'carousel_header_description': 'carousel_header_descriptions',
-            # Uncomment the lines below if needed
-            # 'basicDescription': 'basicDescriptions',
-            # 'shortDescription': 'shortDescriptions'
         }
         for key, value in buildDataMappings.items():
             if key in data:
@@ -98,7 +97,7 @@ class FacebookAdsService:
             adSetUpdated = adSet.update(self.__api)
 
             if not adSetUpdated:
-                raise Exception(f"Nie udało się zaktualizować AdSet")
+                raise Exception(f"Nie udało się zaktualizować AdSet {adSetId}")
 
         except Exception as e:
             raise Exception(f"Wystapił inny błąd z aktualizacją AdSet {adSetId}: {e}")
@@ -112,7 +111,7 @@ class FacebookAdsService:
             if 'campaign_name' in data:
                 campaign.setName(data['campaign_name'])
 
-            campaign.setStatus('PAUSED')
+            campaign.setStatus(Campaign.Status.paused)
 
             modifiedData = self.__textModifier.modifyDictionaryByKey(data, campaign.getData())
             campaign.setData(modifiedData)
@@ -120,4 +119,4 @@ class FacebookAdsService:
             campaign.update(self.__api)
 
         except Exception as e:
-            raise Exception(f"Wystapił błąd z aktualizacją Campaign {campaignId}: {e}")
+            raise Exception(f"Wystapił inny błąd z aktualizacją Campaign {campaignId}: {e}")

@@ -14,7 +14,7 @@ def run():
         os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
         app = QApplication([])
-        window = Window()
+        window = Window(logger)
         window.show()
         app.exec()
     except Exception as e:

@@ -8,6 +8,7 @@ from PyQt6.uic import loadUi
 
 from config import Config
 from excel_loader import ExcelLoader
+from logger import Logger
 from services.facebook_ad_service import FacebookAdsService
 from services.facebook_business_api import FacebookBusinessApi
 
@@ -16,12 +17,13 @@ class AdUpdateThread(QThread):
     logMessage = pyqtSignal(str, str)
     updateFinished = pyqtSignal()
 
-    def __init__(self, adsService, adAccountId, selectedCampaignIds, dt):
+    def __init__(self, adsService, adAccountId, selectedCampaignIds, dt, logger: Logger):
         super().__init__()
         self.adsService = adsService
         self.adAccountId = adAccountId
         self.selectedCampaignIds = selectedCampaignIds
         self.dt = dt
+        self.logger = logger
 
     def run(self):
         for campaignId, row in zip(self.selectedCampaignIds, self.dt):
@@ -30,13 +32,16 @@ class AdUpdateThread(QThread):
                 self.adsService.update(self.adAccountId, campaignId, row)
                 self.logMessage.emit(f'Zakończono aktualizację dla kampanii {campaignId}', 'green')
             except Exception as e:
+                self.logger.error(f"Wystąpił błąd z aktualizacją Campaign {campaignId}: {str(e)}")
                 self.logMessage.emit(f"Wystąpił błąd z aktualizacją Campaign {campaignId}: {str(e)}", 'red')
 
         self.updateFinished.emit()
 
 
 class Window(QMainWindow):
-    def __init__(self):
+    def __init__(self, logger: Logger):
+        self.logger = logger
+
         super().__init__()
         self.initUI()
 
@@ -57,7 +62,11 @@ class Window(QMainWindow):
             self.loadFileButton.clicked.connect(self.loadExcelFile)
             self.startButton.clicked.connect(self.adAllUpdate)
             self.campaignListView.clicked.connect(self.selectCampaignListView)
+            self.nextPageButton.clicked.connect(self.nextPage)
+            self.prevPageButton.clicked.connect(self.prevPage)
+
         except Exception as e:
+            self.logger.error(e)
             self.logError(str(e))
 
     def initUI(self):
@@ -106,23 +115,26 @@ class Window(QMainWindow):
             self.log('Rozpoczęto aktualizację ADS', color='green')
 
             self.ad_update_thread = AdUpdateThread(self.__adsService, selected_adaccount_id, self.__selectedCampaignIds,
-                                                   self.dt)
+                                                   self.dt, self.logger)
             self.ad_update_thread.logMessage.connect(self.log)
             self.ad_update_thread.updateFinished.connect(self.onUpdateFinished)
             self.ad_update_thread.start()
 
         except Exception as e:
+            self.logger.error(e)
             self.logError(str(e))
 
     def onUpdateFinished(self):
-        self.fillCampaignsListView()
-
         self.log('KONIEC', color='green')
         self.log(
             'PAMIĘTAJ: API Facebooka może mieć ograniczenia. Jeśli aktualizacja nie powiodła się, spróbuj ponownie za kilka minut.',
             color='orange')
         self.log('Pamiętaj również, że po pomyślnej aktualizacji zaleca się odczekanie przed kolejną próbą.',
                  color='orange')
+
+        self.__selectedCampaignIds = []
+
+        self.fillCampaignsListView()
 
         self.startButton.setText("Start")
         self.startButton.setDisabled(False)
@@ -153,6 +165,7 @@ class Window(QMainWindow):
                 businessId = business['id']
                 self.businessComboBox.addItem(name, businessId)
         except Exception as e:
+            self.logger.error(e)
             self.logError(str(e))
 
     def fillAdAccountsCombobox(self):
@@ -180,6 +193,7 @@ class Window(QMainWindow):
                 adAccountId = adAccount['id']
                 self.adAccountsComboBox.addItem(name, adAccountId)
         except Exception as e:
+            self.logger.error(e)
             self.logError(str(e))
 
     def fillCampaignsListView(self):
@@ -192,23 +206,100 @@ class Window(QMainWindow):
 
             adAccountId = self.adAccountsComboBox.itemData(selectedAdAccountIndex)
 
-            campaigns = self.__facebookBusinessApi.getCampaigns(adAccountId)
+            campaignsData = self.__facebookBusinessApi.getCampaigns(adAccountId)
 
-            model = QStandardItemModel()
+            self.totalCampaigns = []
 
-            for campaign in campaigns:
-                name = campaign['name']
-                campaignId = campaign['id']
+            self.currentPage = 1
+            self.itemsPerPage = 25
 
-                item = QStandardItem(f"{name}")
-                item.setCheckable(True)
-                item.setCheckState(Qt.CheckState.Unchecked)
-                item.setData(campaignId, Qt.ItemDataRole.UserRole)
-                model.appendRow(item)
+            self.campaignNextUrl = None
+            self.campaignPreviousUrl = None
 
-            self.campaignListView.setModel(model)
+            self.loadCampaigns(campaignsData)
+
+            self.pageLabel.setText(f"Strona {self.currentPage}")
         except Exception as e:
+            self.logger.error(e)
             self.logError(str(e))
+
+    def loadNextPage(self):
+        try:
+            if self.campaignNextUrl:
+                data = self.__facebookBusinessApi.getRequest(self.campaignNextUrl)
+
+                self.loadCampaigns(data)
+        except Exception as e:
+            self.logger.error(e)
+            self.logError(str(e))
+
+    def loadPreviousPage(self):
+        try:
+            if self.campaignPreviousUrl:
+                data = self.__facebookBusinessApi.getRequest(self.campaignPreviousUrl)
+
+                self.loadCampaigns(data)
+        except Exception as e:
+            self.logger.error(e)
+            self.logError(str(e))
+
+    def loadCampaigns(self, campaignsData):
+        try:
+            newCampaigns = campaignsData['data']
+
+            self.totalCampaigns.extend(newCampaigns)
+            self.updateCampaignsListView()
+
+            if 'paging' in campaignsData:
+                paging = campaignsData['paging']
+
+                self.campaignNextUrl = paging.get('next')
+                self.campaignPreviousUrl = paging.get('previous')
+
+        except Exception as e:
+            self.logger.error(e)
+            self.logError(str(e))
+
+    def updateCampaignsListView(self):
+        startIndex = (self.currentPage - 1) * self.itemsPerPage
+        endIndex = startIndex + self.itemsPerPage
+        campaigns = self.totalCampaigns[startIndex:endIndex]
+
+        model = QStandardItemModel()
+
+        for campaign in campaigns:
+            name = campaign['name']
+            campaignId = campaign['id']
+
+            item = QStandardItem(f"{name} (ID: {campaignId})")
+            item.setCheckable(True)
+
+            if campaignId in self.__selectedCampaignIds:
+                item.setCheckState(Qt.CheckState.Checked)
+            else:
+                item.setCheckState(Qt.CheckState.Unchecked)
+
+            item.setData(campaignId, Qt.ItemDataRole.UserRole)
+            model.appendRow(item)
+
+        self.campaignListView.setModel(model)
+        self.pageLabel.setText(f"Strona {self.currentPage}")
+
+    def nextPage(self):
+        if self.currentPage * self.itemsPerPage < len(self.totalCampaigns):
+            self.currentPage += 1
+            self.updateCampaignsListView()
+        elif self.campaignNextUrl:
+            self.currentPage += 1
+            self.loadNextPage()
+
+    def prevPage(self):
+        if self.currentPage > 1:
+            self.currentPage -= 1
+            if (self.currentPage - 1) * self.itemsPerPage < len(self.totalCampaigns):
+                self.updateCampaignsListView()
+            elif self.campaignPreviousUrl:
+                self.loadPreviousPage()
 
     def loadExcelFile(self):
         try:
@@ -222,7 +313,7 @@ class Window(QMainWindow):
             else:
                 self.dt = None
 
-
         except Exception as e:
-            self.dt = None
+            self.logger.error(e)
             self.logError(str(e))
+            self.dt = None

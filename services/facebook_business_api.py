@@ -16,6 +16,7 @@ class FacebookBusinessApi:
     def __init__(self, config: Config):
         self.config = config
         self.__initFacebookApi()
+        self.version = 'v19.0'
 
     def __initFacebookApi(self):
         try:
@@ -35,21 +36,39 @@ class FacebookBusinessApi:
         except Exception as e:
             raise Exception("Wystąpił błąd podczas pobierania kont reklamowych:", e)
 
-    def getCampaigns(self, accountId, statuses=None):
+    def getRequest(self, url):
         try:
-            adAccount = AdAccount(accountId)
-            campaigns = adAccount.get_campaigns(fields=['id', 'name', 'status'])
+            headers = {
+                "Authorization": f"Bearer {self.config.getAccessToken()}"
+            }
 
-            if statuses:
-                return [campaign for campaign in campaigns if campaign['status'] in statuses]
-            else:
-                return campaigns
+            response = requests.get(url, headers=headers)
+
+            response.raise_for_status()
+
+            return response.json()
+
+        except requests.RequestException as e:
+            raise Exception(f":Wystapił błąd z zapytaniem HTTP:", e)
+
+    def getCampaigns(self, accountId):
+        try:
+            url = f"https://graph.facebook.com/{self.version}/{accountId}/campaigns?fields=id,name,status"
+
+            headers = {
+                "Authorization": f"Bearer {self.config.getAccessToken()}"
+            }
+
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+
+            return response.json()
         except Exception as e:
             raise Exception("Wystąpił błąd podczas pobierania kampanii reklamowych:", e)
 
     def getCampaignData(self, campaignId):
         try:
-            url = f"https://graph.facebook.com/v19.0/{campaignId}?fields=id,name,status,daily_budget,start_time,stop_time"
+            url = f"https://graph.facebook.com/{self.version}/{campaignId}?fields=id,name,status,daily_budget,start_time,stop_time"
 
             headers = {
                 "Authorization": f"Bearer {self.config.getAccessToken()}"
@@ -66,7 +85,7 @@ class FacebookBusinessApi:
 
     def updateCampaign(self, campaignFb: CampaignFb):
         try:
-            url = f"https://graph.facebook.com/v19.0/{campaignFb.getId()}"
+            url = f"https://graph.facebook.com/{self.version}/{campaignFb.getId()}"
 
             headers = {
                 "Authorization": f"Bearer {self.config.getAccessToken()}",
@@ -84,7 +103,7 @@ class FacebookBusinessApi:
 
     def copyCampaign(self, campaignId):
         try:
-            url = f"https://graph.facebook.com/v19.0/{campaignId}/copies"
+            url = f"https://graph.facebook.com/{self.version}/{campaignId}/copies"
 
             headers = {
                 "Authorization": f"Bearer {self.config.getAccessToken()}",
@@ -108,7 +127,7 @@ class FacebookBusinessApi:
 
     def getBusinesses(self):
         try:
-            url = "https://graph.facebook.com/v19.0/me?fields=businesses"
+            url = f"https://graph.facebook.com/{self.version}/me?fields=businesses"
 
             headers = {
                 "Authorization": f"Bearer {self.config.getAccessToken()}"
@@ -185,7 +204,7 @@ class FacebookBusinessApi:
 
     def attachNewCreativeAdToCreativeAd(self, adId, newCreativeAdId):
         try:
-            url = f"https://graph.facebook.com/v19.0/{adId}?fields=creative"
+            url = f"https://graph.facebook.com/{self.version}/{adId}?fields=creative"
 
             headers = {
                 "Authorization": f"Bearer {self.config.getAccessToken()}",
@@ -212,7 +231,7 @@ class FacebookBusinessApi:
 
     def updateAdSet(self, adSetFb: AdSetFb):
         try:
-            url = f"https://graph.facebook.com/v19.0/{adSetFb.getId()}"
+            url = f"https://graph.facebook.com/{self.version}/{adSetFb.getId()}"
 
             headers = {
                 "Authorization": f"Bearer {self.config.getAccessToken()}",

@@ -64,6 +64,7 @@ class Window(QMainWindow):
             self.campaignListView.clicked.connect(self.selectCampaignListView)
             self.nextPageButton.clicked.connect(self.nextPage)
             self.prevPageButton.clicked.connect(self.prevPage)
+            self.refreshCampaingsButton.clicked.connect(self.refreshCampaignsListView)
 
         except Exception as e:
             self.logger.error(e)
@@ -75,6 +76,10 @@ class Window(QMainWindow):
         else:
             ui_path = os.path.join("gui", "app.ui")
         loadUi(ui_path, self)
+
+    def refreshCampaignsListView(self):
+        self.__selectedCampaignIds = []
+        self.fillCampaignsListView()
 
     def selectCampaignListView(self, index):
         data = self.campaignListView.model().data(index, Qt.ItemDataRole.UserRole)

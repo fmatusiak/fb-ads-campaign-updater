@@ -16,7 +16,8 @@ class FacebookBusinessApi:
     def __init__(self, config: Config):
         self.config = config
         self.__initFacebookApi()
-        self.version = 'v19.0'
+        self.version = self.config.getVersion()
+        self.timeout = 120
 
     def __initFacebookApi(self):
         try:
@@ -42,7 +43,7 @@ class FacebookBusinessApi:
                 "Authorization": f"Bearer {self.config.getAccessToken()}"
             }
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
 
             response.raise_for_status()
 
@@ -59,7 +60,7 @@ class FacebookBusinessApi:
                 "Authorization": f"Bearer {self.config.getAccessToken()}"
             }
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
 
             return response.json()
@@ -74,7 +75,7 @@ class FacebookBusinessApi:
                 "Authorization": f"Bearer {self.config.getAccessToken()}"
             }
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
 
             data = response.json()
@@ -94,7 +95,7 @@ class FacebookBusinessApi:
 
             campaignData = campaignFb.getData()
 
-            response = requests.post(url, headers=headers, json=campaignData)
+            response = requests.post(url, headers=headers, json=campaignData, timeout=self.timeout)
             response.raise_for_status()
 
             return response.json()
@@ -133,7 +134,7 @@ class FacebookBusinessApi:
                 "Authorization": f"Bearer {self.config.getAccessToken()}"
             }
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             response.raise_for_status()
 
             return response.json()['businesses']['data']
@@ -149,7 +150,6 @@ class FacebookBusinessApi:
         except Exception as e:
             raise Exception("Wystąpił błąd podczas pobierania kont reklamowych Ad:", e)
 
-    # pobranie reklam z zestawu reklam
     def getAdsForCampaign(self, campaignId, statuses=None):
         try:
             ads = AdSet(campaignId).get_ads(fields={
@@ -217,7 +217,7 @@ class FacebookBusinessApi:
                 }
             }
 
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=self.timeout)
             response.raise_for_status()
 
             jsonResponse = response.json()
@@ -240,7 +240,7 @@ class FacebookBusinessApi:
 
             adSetData = adSetFb.getData()
 
-            response = requests.post(url, headers=headers, json=adSetData)
+            response = requests.post(url, headers=headers, json=adSetData, timeout=self.timeout)
             response.raise_for_status()
 
             return response.json()

@@ -36,3 +36,6 @@ class Config:
 
     def getAccountId(self):
         return self.get('account-id')
+
+    def getVersion(self):
+        return self.get('version')

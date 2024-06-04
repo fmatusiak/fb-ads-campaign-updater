@@ -1,5 +1,6 @@
 {
   "app-id": "APP ID",
   "app-secret": "APP SECRET",
-  "access-token": "ACCESS TOKEN"
+  "access-token": "ACCESS TOKEN",
+  "version": "API VERSION"
 }

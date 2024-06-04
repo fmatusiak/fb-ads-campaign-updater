@@ -114,8 +114,8 @@ ipython_config.py
 config.json
 cacert.pem
 
-*/__pycache__
-
+ __pycache__
+*/ __pycache__/
 
 logs
 output

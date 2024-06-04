@@ -45,7 +45,7 @@ class Window(QMainWindow):
         super().__init__()
         self.initUI()
 
-        self.ad_update_thread = None
+        self.adUpdateThread = None
         self.dt = []
 
         try:
@@ -100,17 +100,17 @@ class Window(QMainWindow):
                 self.logError("Nie wczytano danych z pliku Excel.")
                 return
 
-            selected_business_index = self.businessComboBox.currentIndex()
-            selected_business_id = self.businessComboBox.itemData(selected_business_index)
+            selectedBusinessIndex = self.businessComboBox.currentIndex()
+            selectedBusinessId = self.businessComboBox.itemData(selectedBusinessIndex)
 
-            if not selected_business_id:
+            if not selectedBusinessId:
                 self.logError("Nie wybrano firmy.")
                 return
 
-            selected_adaccount_index = self.adAccountsComboBox.currentIndex()
-            selected_adaccount_id = self.adAccountsComboBox.itemData(selected_adaccount_index)
+            selectedAdAccountIndex = self.adAccountsComboBox.currentIndex()
+            selectedAdAccountId = self.adAccountsComboBox.itemData(selectedAdAccountIndex)
 
-            if not selected_adaccount_id:
+            if not selectedAdAccountId:
                 self.logError("Nie wybrano konta reklamowego.")
                 return
 
@@ -119,11 +119,11 @@ class Window(QMainWindow):
 
             self.log('Rozpoczęto aktualizację ADS', color='green')
 
-            self.ad_update_thread = AdUpdateThread(self.__adsService, selected_adaccount_id, self.__selectedCampaignIds,
-                                                   self.dt, self.logger)
-            self.ad_update_thread.logMessage.connect(self.log)
-            self.ad_update_thread.updateFinished.connect(self.onUpdateFinished)
-            self.ad_update_thread.start()
+            self.adUpdateThread = AdUpdateThread(self.__adsService, selectedAdAccountId, self.__selectedCampaignIds,
+                                                 self.dt, self.logger)
+            self.adUpdateThread.logMessage.connect(self.log)
+            self.adUpdateThread.updateFinished.connect(self.onUpdateFinished)
+            self.adUpdateThread.start()
 
         except Exception as e:
             self.logger.error(e)
@@ -169,6 +169,7 @@ class Window(QMainWindow):
                 name = business['name']
                 businessId = business['id']
                 self.businessComboBox.addItem(name, businessId)
+
         except Exception as e:
             self.logger.error(e)
             self.logError(str(e))
@@ -197,6 +198,7 @@ class Window(QMainWindow):
                 name = adAccount['name']
                 adAccountId = adAccount['id']
                 self.adAccountsComboBox.addItem(name, adAccountId)
+
         except Exception as e:
             self.logger.error(e)
             self.logError(str(e))

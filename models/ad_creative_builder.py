@@ -6,25 +6,49 @@ class AdCreativeBuilder:
         if 'id' in adCreativeData:
             adCreativeData.pop('id')
 
+        dfs = adCreativeData.get('degrees_of_freedom_spec', {})
+        dfs.get('creative_features_spec', {}).pop('standard_enhancements', None)
+
         self.__data = adCreativeData
 
-        self.add_degrees_of_freedom_spec()
+        # self.add_degrees_of_freedom_spec()
 
     def add_degrees_of_freedom_spec(self):
-        if 'degrees_of_freedom_spec' not in self.__data:
-            self.__data['degrees_of_freedom_spec'] = {
-                "creative_features_spec": {
-                    "standard_enhancements": {
-                        "enroll_status": "OPT_IN"
-                    }
-                }
+        if 'degrees_of_freedom_spec' in self.__data:
+            return  # już ustawione, nic nie robimy
+
+        self.__data['degrees_of_freedom_spec'] = {
+            "creative_features_spec": {
+                # przykładowe, dozwolone przełączniki Advantage+
+                "advantage_plus_creative": {"enroll_status": "OPT_IN"},
+                "text_optimizations": {"enroll_status": "OPT_IN"},
+                "image_brightness_and_contrast": {"enroll_status": "OPT_IN"},
+                "video_auto_crop": {"enroll_status": "OPT_IN"}
             }
+        }
 
     def add_ad_format(self):
         if 'ad_format' not in self.__data:
             self.__data['ad_format'] = 'carousel'
 
+    def clean_link_data(self):
+        oss = self.__data.get('object_story_spec', {})
+        video_data = oss.get('video_data')
+
+        if isinstance(video_data, dict):
+            if 'image_url' in video_data and 'image_hash' in video_data:
+                del video_data['image_url']
+
+        link_data = self.__data.get('object_story_spec', {}).get('link_data', {})
+
+        if 'picture' in link_data and 'image_hash' in link_data:
+            del link_data['picture']
+
     def buildData(self, field, value):
+        def clean_link_data(link_data):
+            if 'picture' in link_data and 'image_hash' in link_data:
+                del link_data['picture']
+
         if field == 'single_header_names':
             if 'object_story_spec' not in self.__data:
                 self.__data['object_story_spec'] = {}
@@ -34,6 +58,7 @@ class AdCreativeBuilder:
 
             if len(value) == 1 and 'asset_feed_spec' not in self.__data:
                 link_data = self.__data['object_story_spec']['link_data']
+
                 link_data['name'] = value[0] if value[0] else None
             else:
                 if 'asset_feed_spec' not in self.__data:
@@ -63,6 +88,7 @@ class AdCreativeBuilder:
 
             if len(value) == 1 and 'asset_feed_spec' not in self.__data:
                 link_data = self.__data['object_story_spec']['link_data']
+
                 link_data['message'] = value[0] if value[0] else None
             else:
                 if 'asset_feed_spec' not in self.__data:
@@ -93,6 +119,7 @@ class AdCreativeBuilder:
 
             if len(value) == 1 and 'asset_feed_spec' not in self.__data:
                 link_data = self.__data['object_story_spec']['link_data']
+
                 link_data['description'] = value[0] if value[0] else None
             else:
                 if 'asset_feed_spec' not in self.__data:
@@ -197,6 +224,8 @@ class AdCreativeBuilder:
             raise ValueError("Nieobsługiwane pole do aktualizacji")
 
     def getData(self):
+        self.clean_link_data()
+
         return self.__data
 
     def setData(self, data):

@@ -99,8 +99,10 @@ class FacebookBusinessApi:
             response.raise_for_status()
 
             return response.json()
-        except Exception as e:
-            raise Exception("Wystąpił błąd z aktualizacją kampanii", e)
+        except requests.HTTPError as exc:
+            raise Exception(
+                f"Błąd {response.status_code}: {response.text}"
+            ) from exc
 
     def copyCampaign(self, campaignId):
         try:
@@ -226,8 +228,10 @@ class FacebookBusinessApi:
                 return True
             else:
                 raise Exception("Aktualizacja kampanii CreativeAd nie powiodła się.")
-        except Exception as e:
-            raise Exception("Wystapił błąd z przypięciem nowej reklamy do aktualnej reklamy", e)
+        except requests.HTTPError as exc:
+            raise Exception(
+                f"Błąd {response.status_code}: {response.text}"
+            ) from exc
 
     def updateAdSet(self, adSetFb: AdSetFb):
         try:
@@ -244,8 +248,10 @@ class FacebookBusinessApi:
             response.raise_for_status()
 
             return response.json()
-        except Exception as e:
-            raise Exception("Wystąpił błąd podczas aktualizacji AdSet:", e)
+        except requests.HTTPError as exc:
+            raise Exception(
+                f"Błąd {response.status_code}: {response.text}"
+            ) from exc
 
     def getAdCreativeData(self, adCreativeId):
         try:

@@ -40,6 +40,7 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
             'degrees_of_freedom_spec': {
                 'creative_features_spec': {
                     'standard_enhancements': {'enroll_status': 'OPT_IN'},
+                    'standard_enhancements_catalog': {'enroll_status': 'OPT_IN'},
                     'video_auto_crop': {'enroll_status': 'OPT_IN'},
                 }
             },
@@ -51,7 +52,8 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
         data = builder.getData()
         creativeFeatures = data['degrees_of_freedom_spec']['creative_features_spec']
 
-        self.assertEqual('OPT_OUT', creativeFeatures['standard_enhancements']['enroll_status'])
+        self.assertNotIn('standard_enhancements', creativeFeatures)
+        self.assertNotIn('standard_enhancements_catalog', creativeFeatures)
         self.assertEqual('OPT_OUT', creativeFeatures['advantage_plus_creative']['enroll_status'])
         self.assertEqual('OPT_OUT', creativeFeatures['video_auto_crop']['enroll_status'])
         self.assertEqual('OPT_OUT', creativeFeatures['multi_photo_to_video']['enroll_status'])
@@ -59,7 +61,7 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
         self.assertEqual({'enabled': False}, data['product_suggestion_settings'])
         self.assertNotIn('recommender_settings', data)
 
-    def test_copy_ad_creative_data_does_not_remove_standard_enhancements_opt_out(self):
+    def test_copy_ad_creative_data_removes_deprecated_standard_enhancements_fields(self):
         builder = AdCreativeBuilder()
 
         builder.copyAdCreativeData({
@@ -67,6 +69,7 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
             'degrees_of_freedom_spec': {
                 'creative_features_spec': {
                     'standard_enhancements': {'enroll_status': 'OPT_OUT'},
+                    'standard_enhancements_catalog': {'enroll_status': 'OPT_OUT'},
                 }
             },
         })
@@ -74,10 +77,11 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
         data = builder.getData()
 
         self.assertNotIn('id', data)
-        self.assertEqual(
-            'OPT_OUT',
-            data['degrees_of_freedom_spec']['creative_features_spec']['standard_enhancements']['enroll_status']
-        )
+        creativeFeatures = data['degrees_of_freedom_spec']['creative_features_spec']
+
+        self.assertNotIn('standard_enhancements', creativeFeatures)
+        self.assertNotIn('standard_enhancements_catalog', creativeFeatures)
+        self.assertEqual('OPT_OUT', creativeFeatures['advantage_plus_creative']['enroll_status'])
 
 
 if __name__ == '__main__':

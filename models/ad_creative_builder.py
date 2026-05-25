@@ -1,6 +1,5 @@
 class AdCreativeBuilder:
     CREATIVE_FEATURES_TO_OPT_OUT = {
-        'standard_enhancements',
         'advantage_plus_creative',
         'adapt_to_placement',
         'add_text_overlay',
@@ -36,7 +35,6 @@ class AdCreativeBuilder:
         'show_destination_blurbs',
         'show_summary',
         'site_extensions',
-        'standard_enhancements_catalog',
         'text_extraction_for_headline',
         'text_extraction_for_tap_target',
         'text_formatting_optimization',
@@ -49,6 +47,10 @@ class AdCreativeBuilder:
         'video_highlights',
         'video_to_image',
         'video_uncrop',
+    }
+    DEPRECATED_CREATIVE_FEATURES = {
+        'standard_enhancements',
+        'standard_enhancements_catalog',
     }
 
     def __init__(self):
@@ -67,6 +69,9 @@ class AdCreativeBuilder:
 
         for feature in self.CREATIVE_FEATURES_TO_OPT_OUT:
             creativeFeaturesSpec[feature] = {'enroll_status': 'OPT_OUT'}
+
+        for feature in self.DEPRECATED_CREATIVE_FEATURES:
+            creativeFeaturesSpec.pop(feature, None)
 
         self.__data['contextual_multi_ads'] = {'enroll_status': 'OPT_OUT'}
         self.__data['product_suggestion_settings'] = {'enabled': False}

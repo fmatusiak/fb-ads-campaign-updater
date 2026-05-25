@@ -1,4 +1,56 @@
 class AdCreativeBuilder:
+    CREATIVE_FEATURES_TO_OPT_OUT = {
+        'standard_enhancements',
+        'advantage_plus_creative',
+        'adapt_to_placement',
+        'add_text_overlay',
+        'ads_with_benefits',
+        'auto_promotion_tag',
+        'biz_ai',
+        'carousel_to_video',
+        'creative_stickers',
+        'customize_product_recommendation',
+        'description_automation',
+        'dynamic_partner_content',
+        'enhance_cta',
+        'generate_cta',
+        'image_animation',
+        'image_auto_crop',
+        'image_background_gen',
+        'image_brightness_and_contrast',
+        'image_enhancement',
+        'image_templates',
+        'image_touchups',
+        'image_uncrop',
+        'inline_comment',
+        'media_order',
+        'media_type_automation',
+        'multi_photo_to_video',
+        'music_generation',
+        'product_extensions',
+        'product_metadata_automation',
+        'product_tags',
+        'profile_card',
+        'profile_extension',
+        'replace_media_text',
+        'show_destination_blurbs',
+        'show_summary',
+        'site_extensions',
+        'standard_enhancements_catalog',
+        'text_extraction_for_headline',
+        'text_extraction_for_tap_target',
+        'text_formatting_optimization',
+        'text_generation',
+        'text_optimizations',
+        'text_translation',
+        'video_auto_crop',
+        'video_filtering',
+        'video_highlight',
+        'video_highlights',
+        'video_to_image',
+        'video_uncrop',
+    }
+
     def __init__(self):
         self.__data = {}
 
@@ -6,12 +58,19 @@ class AdCreativeBuilder:
         if 'id' in adCreativeData:
             adCreativeData.pop('id')
 
-        dfs = adCreativeData.get('degrees_of_freedom_spec', {})
-        dfs.get('creative_features_spec', {}).pop('standard_enhancements', None)
-
         self.__data = adCreativeData
+        self.disableRecommendationsAndEnhancements()
 
-        # self.add_degrees_of_freedom_spec()
+    def disableRecommendationsAndEnhancements(self):
+        degreesOfFreedomSpec = self.__data.setdefault('degrees_of_freedom_spec', {})
+        creativeFeaturesSpec = degreesOfFreedomSpec.setdefault('creative_features_spec', {})
+
+        for feature in self.CREATIVE_FEATURES_TO_OPT_OUT:
+            creativeFeaturesSpec[feature] = {'enroll_status': 'OPT_OUT'}
+
+        self.__data['contextual_multi_ads'] = {'enroll_status': 'OPT_OUT'}
+        self.__data['product_suggestion_settings'] = {'enabled': False}
+        self.__data.pop('recommender_settings', None)
 
     def add_degrees_of_freedom_spec(self):
         if 'degrees_of_freedom_spec' in self.__data:
@@ -225,8 +284,10 @@ class AdCreativeBuilder:
 
     def getData(self):
         self.clean_link_data()
+        self.disableRecommendationsAndEnhancements()
 
         return self.__data
 
     def setData(self, data):
         self.__data = data
+        self.disableRecommendationsAndEnhancements()

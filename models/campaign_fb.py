@@ -1,4 +1,5 @@
 from date_parser import DateParser
+from app_errors import AppError
 
 
 class CampaignFb:
@@ -26,6 +27,15 @@ class CampaignFb:
     def getStatus(self):
         return self.__data.get('status')
 
+    def getSmartPromotionType(self):
+        return self.__data.get('smart_promotion_type')
+
+    def isLegacyAdvantagePlusCampaign(self):
+        return self.getSmartPromotionType() in {
+            'AUTOMATED_SHOPPING_ADS',
+            'SMART_APP_PROMOTION',
+        }
+
     def getStartTime(self):
         return self.__data.get('start_time')
 
@@ -45,12 +55,20 @@ class CampaignFb:
             if "success" in jsonResponse and jsonResponse["success"]:
                 return True
             else:
-                raise Exception("Aktualizacja kampanii nie powiodła się.")
+                raise AppError("Meta API nie potwierdzilo aktualizacji kampanii")
         except Exception as e:
-            raise Exception("Wystąpił błąd z aktualizacją kampanii", e)
+            raise AppError(
+                "Aktualizacja kampanii nie powiodla sie",
+                context={"campaign_id": self.getId()},
+                cause=e,
+            )
 
     def copy(self, api):
         try:
             return api.copyCampaign(self.getId())
         except Exception as e:
-            raise Exception("Wystąpił błąd z klonowaniem kampanii", e)
+            raise AppError(
+                "Klonowanie kampanii nie powiodlo sie",
+                context={"campaign_id": self.getId()},
+                cause=e,
+            )

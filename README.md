@@ -10,7 +10,7 @@ W katalogu `output` znajdziesz gotową aplikację do uruchomienia. Wystarczy sko
 ## Wymagania
 - Python 3.12 lub nowszy
 - Biblioteki:
-  - facebook_business==19.0.3
+  - facebook_business==25.0.1
   - pandas==2.2.2
   - PyQt6==6.7.0
   - PyQt6-sip==13.6.0
@@ -27,7 +27,7 @@ Przykładowy `config.json`:
       "app-id": "APP ID",
       "app-secret": "APP SECRET",
       "access-token": "ACCESS TOKEN",
-      "version": "API VERSION"
+      "version": "v25.0"
     }
 
 ## Instalacja

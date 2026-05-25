@@ -6,6 +6,7 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtWidgets import QMainWindow, QFileDialog
 from PyQt6.uic import loadUi
 
+from app_errors import format_exception_for_display, message_to_html
 from config import Config
 from excel_loader import ExcelLoader
 from logger import Logger
@@ -28,12 +29,13 @@ class AdUpdateThread(QThread):
     def run(self):
         for campaignId, row in zip(self.selectedCampaignIds, self.dt):
             try:
-                self.logMessage.emit(f'Rozpoczęto aktualizację dla kampanii {campaignId}', 'black')
+                self.logMessage.emit(f"Start aktualizacji kampanii {campaignId}", "black")
                 self.adsService.update(self.adAccountId, campaignId, row)
-                self.logMessage.emit(f'Zakończono aktualizację dla kampanii {campaignId}', 'green')
+                self.logMessage.emit(f"Zakonczono aktualizacje kampanii {campaignId}", "green")
             except Exception as e:
-                self.logger.error(f"Wystąpił błąd z aktualizacją Campaign {campaignId}: {str(e)}")
-                self.logMessage.emit(f"Wystąpił błąd z aktualizacją Campaign {campaignId}: {str(e)}", 'red')
+                message = format_exception_for_display(e, f"Blad aktualizacji kampanii {campaignId}")
+                self.logger.error(message)
+                self.logMessage.emit(message, "red")
 
         self.updateFinished.emit()
 
@@ -49,7 +51,7 @@ class Window(QMainWindow):
         self.dt = []
 
         try:
-            config = Config('config.json')
+            config = Config("config.json")
             self.__facebookBusinessApi = FacebookBusinessApi(config)
             self.__adsService = FacebookAdsService(self.__facebookBusinessApi)
 
@@ -67,8 +69,9 @@ class Window(QMainWindow):
             self.refreshCampaingsButton.clicked.connect(self.refreshCampaignsListView)
 
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad startu aplikacji")
+            self.logger.error(message)
+            self.logError(message)
 
     def initUI(self):
         if hasattr(sys, "_MEIPASS"):
@@ -117,25 +120,35 @@ class Window(QMainWindow):
             self.startButton.setText("Aktualizacja w toku...")
             self.startButton.setDisabled(True)
 
-            self.log('Rozpoczęto aktualizację ADS', color='green')
+            self.log("Rozpoczeto aktualizacje ADS", color="green")
 
-            self.adUpdateThread = AdUpdateThread(self.__adsService, selectedAdAccountId, self.__selectedCampaignIds,
-                                                 self.dt, self.logger)
+            self.adUpdateThread = AdUpdateThread(
+                self.__adsService,
+                selectedAdAccountId,
+                self.__selectedCampaignIds,
+                self.dt,
+                self.logger,
+            )
             self.adUpdateThread.logMessage.connect(self.log)
             self.adUpdateThread.updateFinished.connect(self.onUpdateFinished)
             self.adUpdateThread.start()
 
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad uruchomienia aktualizacji")
+            self.logger.error(message)
+            self.logError(message)
 
     def onUpdateFinished(self):
-        self.log('KONIEC', color='green')
+        self.log("KONIEC", color="green")
         self.log(
-            'PAMIĘTAJ: API Facebooka może mieć ograniczenia. Jeśli aktualizacja nie powiodła się, spróbuj ponownie za kilka minut.',
-            color='orange')
-        self.log('Pamiętaj również, że po pomyślnej aktualizacji zaleca się odczekanie przed kolejną próbą.',
-                 color='orange')
+            "Pamietaj: API Facebooka moze miec ograniczenia. "
+            "Jesli aktualizacja nie powiodla sie, sprobuj ponownie za kilka minut.",
+            color="orange",
+        )
+        self.log(
+            "Po pomyslnej aktualizacji zaleca sie odczekanie przed kolejna proba.",
+            color="orange",
+        )
 
         self.__selectedCampaignIds = []
 
@@ -144,11 +157,11 @@ class Window(QMainWindow):
         self.startButton.setText("Start")
         self.startButton.setDisabled(False)
 
-    def logError(self, errorMessage):
-        self.log(errorMessage, color='red')
+    def logError(self, errorMessage, context=None):
+        self.log(format_exception_for_display(errorMessage, context), color="red")
 
-    def log(self, message, color='black'):
-        self.logTextEdit.appendHtml(f"<font color='{color}'>{message}</font><br>")
+    def log(self, message, color="black"):
+        self.logTextEdit.appendHtml(f"<font color='{color}'>{message_to_html(message)}</font><br>")
 
     def __fillInit(self):
         self.fillBusinessCombobox()
@@ -166,13 +179,14 @@ class Window(QMainWindow):
             self.businessComboBox.addItem("WYBIERZ")
 
             for business in businesses:
-                name = business['name']
-                businessId = business['id']
+                name = business["name"]
+                businessId = business["id"]
                 self.businessComboBox.addItem(name, businessId)
 
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad pobierania firm")
+            self.logger.error(message)
+            self.logError(message)
 
     def fillAdAccountsCombobox(self):
         try:
@@ -195,13 +209,14 @@ class Window(QMainWindow):
             self.adAccountsComboBox.addItem("WYBIERZ")
 
             for adAccount in adAccounts:
-                name = adAccount['name']
-                adAccountId = adAccount['id']
+                name = adAccount["name"]
+                adAccountId = adAccount["id"]
                 self.adAccountsComboBox.addItem(name, adAccountId)
 
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad pobierania kont reklamowych")
+            self.logger.error(message)
+            self.logError(message)
 
     def fillCampaignsListView(self):
         try:
@@ -227,8 +242,9 @@ class Window(QMainWindow):
 
             self.pageLabel.setText(f"Strona {self.currentPage}")
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad pobierania kampanii")
+            self.logger.error(message)
+            self.logError(message)
 
     def loadNextPage(self):
         try:
@@ -237,8 +253,9 @@ class Window(QMainWindow):
 
                 self.loadCampaigns(data)
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad pobierania nastepnej strony kampanii")
+            self.logger.error(message)
+            self.logError(message)
 
     def loadPreviousPage(self):
         try:
@@ -247,25 +264,27 @@ class Window(QMainWindow):
 
                 self.loadCampaigns(data)
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad pobierania poprzedniej strony kampanii")
+            self.logger.error(message)
+            self.logError(message)
 
     def loadCampaigns(self, campaignsData):
         try:
-            newCampaigns = campaignsData['data']
+            newCampaigns = campaignsData["data"]
 
             self.totalCampaigns.extend(newCampaigns)
             self.updateCampaignsListView()
 
-            if 'paging' in campaignsData:
-                paging = campaignsData['paging']
+            if "paging" in campaignsData:
+                paging = campaignsData["paging"]
 
-                self.campaignNextUrl = paging.get('next')
-                self.campaignPreviousUrl = paging.get('previous')
+                self.campaignNextUrl = paging.get("next")
+                self.campaignPreviousUrl = paging.get("previous")
 
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad ladowania kampanii do listy")
+            self.logger.error(message)
+            self.logError(message)
 
     def updateCampaignsListView(self):
         startIndex = (self.currentPage - 1) * self.itemsPerPage
@@ -275,8 +294,8 @@ class Window(QMainWindow):
         model = QStandardItemModel()
 
         for campaign in campaigns:
-            name = campaign['name']
-            campaignId = campaign['id']
+            name = campaign["name"]
+            campaignId = campaign["id"]
 
             item = QStandardItem(f"{name} (ID: {campaignId})")
             item.setCheckable(True)
@@ -316,11 +335,12 @@ class Window(QMainWindow):
 
             if filePath:
                 self.dt = excelLoader.load(filePath)
-                self.loadFileButton.setText(filePath.split('/')[-1])
+                self.loadFileButton.setText(filePath.split("/")[-1])
             else:
                 self.dt = None
 
         except Exception as e:
-            self.logger.error(e)
-            self.logError(str(e))
+            message = format_exception_for_display(e, "Blad wczytywania pliku Excel")
+            self.logger.error(message)
+            self.logError(message)
             self.dt = None

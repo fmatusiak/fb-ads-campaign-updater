@@ -41,6 +41,7 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
                 'creative_features_spec': {
                     'standard_enhancements': {'enroll_status': 'OPT_IN'},
                     'standard_enhancements_catalog': {'enroll_status': 'OPT_IN'},
+                    'reveal_details_over_time': {'enroll_status': 'OPT_IN'},
                     'video_auto_crop': {'enroll_status': 'OPT_IN'},
                 }
             },
@@ -55,10 +56,11 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
         self.assertNotIn('standard_enhancements', creativeFeatures)
         self.assertNotIn('standard_enhancements_catalog', creativeFeatures)
         self.assertEqual('OPT_OUT', creativeFeatures['advantage_plus_creative']['enroll_status'])
+        self.assertEqual('OPT_OUT', creativeFeatures['reveal_details_over_time']['enroll_status'])
         self.assertEqual('OPT_OUT', creativeFeatures['video_auto_crop']['enroll_status'])
         self.assertEqual('OPT_OUT', creativeFeatures['multi_photo_to_video']['enroll_status'])
-        self.assertEqual({'enroll_status': 'OPT_OUT'}, data['contextual_multi_ads'])
-        self.assertEqual({'enabled': False}, data['product_suggestion_settings'])
+        self.assertNotIn('contextual_multi_ads', data)
+        self.assertNotIn('product_suggestion_settings', data)
         self.assertNotIn('recommender_settings', data)
 
     def test_copy_ad_creative_data_removes_deprecated_standard_enhancements_fields(self):
@@ -82,6 +84,26 @@ class AdCreativeBuilderAddressUrlTests(unittest.TestCase):
         self.assertNotIn('standard_enhancements', creativeFeatures)
         self.assertNotIn('standard_enhancements_catalog', creativeFeatures)
         self.assertEqual('OPT_OUT', creativeFeatures['advantage_plus_creative']['enroll_status'])
+
+    def test_get_data_removes_deprecated_standard_enhancements_recursively(self):
+        builder = AdCreativeBuilder()
+        builder.setData({
+            'asset_feed_spec': {
+                'additional_data': {
+                    'standard_enhancements': {'enroll_status': 'OPT_OUT'},
+                },
+                'carousels': [
+                    {
+                        'standard_enhancements_catalog': {'enroll_status': 'OPT_OUT'},
+                    },
+                ],
+            },
+        })
+
+        data = builder.getData()
+
+        self.assertNotIn('standard_enhancements', data['asset_feed_spec']['additional_data'])
+        self.assertNotIn('standard_enhancements_catalog', data['asset_feed_spec']['carousels'][0])
 
 
 if __name__ == '__main__':

@@ -32,6 +32,7 @@ class AdCreativeBuilder:
         'profile_card',
         'profile_extension',
         'replace_media_text',
+        'reveal_details_over_time',
         'show_destination_blurbs',
         'show_summary',
         'site_extensions',
@@ -51,6 +52,11 @@ class AdCreativeBuilder:
     DEPRECATED_CREATIVE_FEATURES = {
         'standard_enhancements',
         'standard_enhancements_catalog',
+    }
+    DEPRECATED_CREATIVE_FIELDS = {
+        'contextual_multi_ads',
+        'product_suggestion_settings',
+        'recommender_settings',
     }
 
     def __init__(self):
@@ -73,9 +79,24 @@ class AdCreativeBuilder:
         for feature in self.DEPRECATED_CREATIVE_FEATURES:
             creativeFeaturesSpec.pop(feature, None)
 
-        self.__data['contextual_multi_ads'] = {'enroll_status': 'OPT_OUT'}
-        self.__data['product_suggestion_settings'] = {'enabled': False}
-        self.__data.pop('recommender_settings', None)
+        self.removeDeprecatedEnhancementFields()
+
+    def removeDeprecatedEnhancementFields(self):
+        for field in self.DEPRECATED_CREATIVE_FIELDS:
+            self.__data.pop(field, None)
+
+        self.removeDeprecatedCreativeFeatures(self.__data)
+
+    def removeDeprecatedCreativeFeatures(self, value):
+        if isinstance(value, dict):
+            for feature in self.DEPRECATED_CREATIVE_FEATURES:
+                value.pop(feature, None)
+
+            for nestedValue in value.values():
+                self.removeDeprecatedCreativeFeatures(nestedValue)
+        elif isinstance(value, list):
+            for item in value:
+                self.removeDeprecatedCreativeFeatures(item)
 
     def add_degrees_of_freedom_spec(self):
         if 'degrees_of_freedom_spec' in self.__data:
@@ -290,6 +311,7 @@ class AdCreativeBuilder:
     def getData(self):
         self.clean_link_data()
         self.disableRecommendationsAndEnhancements()
+        self.removeDeprecatedEnhancementFields()
 
         return self.__data
 

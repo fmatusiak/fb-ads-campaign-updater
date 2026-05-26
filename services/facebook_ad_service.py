@@ -7,7 +7,13 @@ from text_modifier import TextModifier
 
 
 class FacebookAdsService:
-    UPDATABLE_AD_STATUSES = {
+    ARCHIVED_COPY_SUFFIX = " (kopia z archiwum)"
+    SOURCE_AD_STATUSES = {
+        'ACTIVE',
+        'PAUSED',
+        'ARCHIVED',
+    }
+    ATTACHABLE_AD_STATUSES = {
         'ACTIVE',
         'PAUSED',
     }
@@ -38,7 +44,8 @@ class FacebookAdsService:
             data = self.processInputData(data)
             campaign = self.__api.getCampaignData(campaignId)
             self.ensureCampaignCanBeUpdated(campaign)
-            ads = self.__api.getAdsForCampaign(campaignId, statuses=self.UPDATABLE_AD_STATUSES)
+            ads = self.__api.getAdsForCampaign(campaignId, statuses=self.SOURCE_AD_STATUSES)
+            ads = self.skipArchivedAdsWithExistingCopy(ads)
             adUpdateErrors = []
 
             for ad in ads:
@@ -106,10 +113,6 @@ class FacebookAdsService:
         stage = "start aktualizacji reklamy"
 
         try:
-            adStatus = ad.get('status')
-            if adStatus and adStatus not in self.UPDATABLE_AD_STATUSES:
-                return
-
             if self.hasCreativeUpdates(data):
                 stage = "sprawdzenie ID kreacji"
                 if not adCreativeId:
@@ -128,7 +131,7 @@ class FacebookAdsService:
                 adCreativeBuilder.setData(modifiedData)
 
                 stage = "tworzenie i podpinanie nowej kreacji"
-                creativeUpdatedResult = self.createAndAttachNewCreativeAd(adAccountId, adCreativeBuilder, adId)
+                creativeUpdatedResult = self.createAndAttachNewCreativeAd(adAccountId, adCreativeBuilder, ad)
 
                 if not creativeUpdatedResult:
                     raise AppError("Meta API nie potwierdzilo aktualizacji reklamy")
@@ -147,6 +150,26 @@ class FacebookAdsService:
 
     def hasCreativeUpdates(self, data: dict) -> bool:
         return any(key in self.CREATIVE_UPDATE_FIELDS or self.isPlaceholderKey(key) for key in data)
+
+    def skipArchivedAdsWithExistingCopy(self, ads):
+        activeCopyKeys = {
+            (ad.get('adset_id'), ad.get('name'))
+            for ad in ads
+            if ad.get('status') in self.ATTACHABLE_AD_STATUSES
+        }
+
+        filteredAds = []
+        for ad in ads:
+            archivedCopyKey = (
+                ad.get('adset_id'),
+                f"{ad.get('name')}{self.ARCHIVED_COPY_SUFFIX}",
+            )
+            if ad.get('status') == 'ARCHIVED' and archivedCopyKey in activeCopyKeys:
+                continue
+
+            filteredAds.append(ad)
+
+        return filteredAds
 
     def ensureCampaignCanBeUpdated(self, campaign) -> None:
         if campaign.isLegacyAdvantagePlusCampaign():
@@ -248,10 +271,26 @@ class FacebookAdsService:
             if key in data:
                 adCreativeBuilder.buildData(value, data[key])
 
-    def createAndAttachNewCreativeAd(self, adAccountId: str, adCreativeBuilder: AdCreativeBuilder, adId: str) -> bool:
+    def createAndAttachNewCreativeAd(self, adAccountId: str, adCreativeBuilder: AdCreativeBuilder, ad: dict) -> bool:
         adCreative = self.__api.createCreativeAd(adAccountId, adCreativeBuilder)
+        adStatus = ad.get('status')
 
-        return self.__api.attachNewCreativeAdToCreativeAd(adId, adCreative['id'])
+        if adStatus == 'ARCHIVED':
+            replacementName = f"{ad.get('name', 'Reklama')}{self.ARCHIVED_COPY_SUFFIX}"
+            replacementAd = self.__api.createAd(
+                adAccountId,
+                ad.get('adset_id'),
+                replacementName,
+                adCreative['id'],
+                status='PAUSED',
+            )
+
+            return bool(replacementAd and replacementAd.get('id'))
+
+        if adStatus and adStatus not in self.ATTACHABLE_AD_STATUSES:
+            return False
+
+        return self.__api.attachNewCreativeAdToCreativeAd(ad.get('id'), adCreative['id'])
 
     def updateAdSet(self, adSetId: str, data: dict) -> None:
         changedFields = []

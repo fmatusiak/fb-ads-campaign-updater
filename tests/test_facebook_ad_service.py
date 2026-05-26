@@ -126,24 +126,40 @@ class FakePartialApi:
         }
         self.campaign = campaign or FakeCampaign()
         self.ads_requested = False
+        self.requested_statuses = None
 
-    def getAdsForCampaign(self, campaign_id):
+    def getAdsForCampaign(self, campaign_id, statuses=None):
         self.ads_requested = True
+        self.requested_statuses = statuses
 
-        return [
+        ads = [
             {
                 'id': 'ad_ok',
                 'name': 'Good ad',
+                'status': 'ACTIVE',
                 'creative': {'id': 'creative_ok'},
                 'adset_id': 'adset_ok',
             },
             {
                 'id': 'ad_bad',
                 'name': 'Bad ad',
+                'status': 'PAUSED',
                 'creative': {'id': 'creative_bad'},
                 'adset_id': 'adset_bad',
             },
+            {
+                'id': 'ad_archived',
+                'name': 'Archived ad',
+                'status': 'ARCHIVED',
+                'creative': {'id': 'creative_archived'},
+                'adset_id': 'adset_archived',
+            },
         ]
+
+        if statuses:
+            return [ad for ad in ads if ad.get('status') in statuses]
+
+        return ads
 
     def getAdSet(self, ad_set_id):
         return self.ad_sets[ad_set_id]
@@ -224,6 +240,22 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
         self.assertTrue(api.ad_set.updated)
         self.assertEqual(1000, api.ad_set.data['daily_budget'])
 
+    def test_update_single_ad_skips_archived_ads(self):
+        api = FakeApi()
+        service = FacebookAdsService(api)
+        ad = {
+            'id': 'ad_1',
+            'name': 'Archived ad',
+            'status': 'ARCHIVED',
+            'creative': {'id': 'creative_1'},
+            'adset_id': 'adset_1',
+        }
+
+        service.updateSingleAd('act_1', ad, {'daily_budget': '10'})
+
+        self.assertFalse(api.creative_data_requested)
+        self.assertFalse(api.ad_set.updated)
+
     def test_update_continues_after_one_ad_fails_and_reports_partial_update(self):
         api = FakePartialApi()
         service = FacebookAdsService(api)
@@ -233,6 +265,7 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
 
         self.assertTrue(api.ad_sets['adset_ok'].updated)
         self.assertTrue(api.campaign.updated)
+        self.assertEqual({'ACTIVE', 'PAUSED'}, api.requested_statuses)
         self.assertIn('czesciowo', str(ctx.exception))
         self.assertIn('ad_bad', str(ctx.exception))
 

@@ -186,7 +186,7 @@ class FacebookBusinessApi:
             })
 
             if statuses:
-                return [ad for ad in ads if ad['status'] in statuses]
+                return [ad for ad in ads if ad.get('status') in statuses]
             else:
                 return ads
         except Exception as e:

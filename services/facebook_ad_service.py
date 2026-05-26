@@ -7,6 +7,10 @@ from text_modifier import TextModifier
 
 
 class FacebookAdsService:
+    UPDATABLE_AD_STATUSES = {
+        'ACTIVE',
+        'PAUSED',
+    }
     CREATIVE_UPDATE_FIELDS = {
         'single_header_name',
         'single_header_description',
@@ -34,7 +38,7 @@ class FacebookAdsService:
             data = self.processInputData(data)
             campaign = self.__api.getCampaignData(campaignId)
             self.ensureCampaignCanBeUpdated(campaign)
-            ads = self.__api.getAdsForCampaign(campaignId)
+            ads = self.__api.getAdsForCampaign(campaignId, statuses=self.UPDATABLE_AD_STATUSES)
             adUpdateErrors = []
 
             for ad in ads:
@@ -102,6 +106,10 @@ class FacebookAdsService:
         stage = "start aktualizacji reklamy"
 
         try:
+            adStatus = ad.get('status')
+            if adStatus and adStatus not in self.UPDATABLE_AD_STATUSES:
+                return
+
             if self.hasCreativeUpdates(data):
                 stage = "sprawdzenie ID kreacji"
                 if not adCreativeId:

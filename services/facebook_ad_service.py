@@ -285,11 +285,30 @@ class FacebookAdsService:
     def createAndAttachNewCreativeAd(self, adAccountId: str, adCreativeBuilder: AdCreativeBuilder, ad: dict) -> bool:
         adCreative = self.__api.createCreativeAd(adAccountId, adCreativeBuilder)
         adStatus = ad.get('status')
+        adId = ad.get('id')
 
         if adStatus and adStatus not in self.UPDATABLE_AD_STATUSES:
             return False
 
-        return self.__api.attachNewCreativeAdToCreativeAd(ad.get('id'), adCreative['id'])
+        pausedForCreativeUpdate = adStatus == 'ACTIVE'
+
+        if pausedForCreativeUpdate:
+            self.__api.updateAdStatus(adId, 'PAUSED')
+
+        try:
+            attached = self.__api.attachNewCreativeAdToCreativeAd(adId, adCreative['id'])
+        except Exception:
+            if pausedForCreativeUpdate:
+                try:
+                    self.__api.updateAdStatus(adId, adStatus)
+                except Exception:
+                    pass
+            raise
+
+        if pausedForCreativeUpdate:
+            self.__api.updateAdStatus(adId, adStatus)
+
+        return attached
 
     def updateAdSet(self, adSetId: str, data: dict) -> None:
         changedFields = []

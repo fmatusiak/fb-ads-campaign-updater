@@ -290,6 +290,24 @@ class FacebookBusinessApi:
                 cause=e,
             )
 
+    def updateAdStatus(self, adId, status):
+        try:
+            url = f"https://graph.facebook.com/{self.version}/{adId}"
+
+            return self.__requestJson(
+                "zmiana statusu reklamy",
+                "POST",
+                url,
+                headers=self.__headers(jsonContent=True),
+                json={"status": status},
+            )
+        except Exception as e:
+            raise AppError(
+                "Blad zmiany statusu reklamy",
+                context={"ad_id": adId, "status": status},
+                cause=e,
+            )
+
     def updateAdSet(self, adSetFb: AdSetFb):
         try:
             url = f"https://graph.facebook.com/{self.version}/{adSetFb.getId()}"

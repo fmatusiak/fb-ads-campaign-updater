@@ -78,6 +78,27 @@ class FakeApi:
         raise AssertionError('Creative data should not be requested')
 
 
+class FakeCreativeUpdateApi:
+    def __init__(self, fail_attach=False):
+        self.status_updates = []
+        self.attached_creatives = []
+        self.fail_attach = fail_attach
+
+    def createCreativeAd(self, ad_account_id, ad_creative_builder):
+        return {'id': 'creative_new'}
+
+    def updateAdStatus(self, ad_id, status):
+        self.status_updates.append((ad_id, status))
+        return {'success': True}
+
+    def attachNewCreativeAdToCreativeAd(self, ad_id, creative_id):
+        self.attached_creatives.append((ad_id, creative_id))
+        if self.fail_attach:
+            raise Exception('Attach failed')
+
+        return True
+
+
 class FakeCampaign:
     def __init__(self, smart_promotion_type=None, campaign_id='campaign_1', name='Campaign one'):
         self.updated = False
@@ -276,6 +297,33 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
 
         self.assertFalse(api.creative_data_requested)
         self.assertFalse(api.ad_set.updated)
+
+    def test_create_and_attach_pauses_active_ad_before_creative_swap(self):
+        api = FakeCreativeUpdateApi()
+        service = FacebookAdsService(api)
+
+        result = service.createAndAttachNewCreativeAd(
+            'act_1',
+            FakeAdCreativeBuilder(),
+            {'id': 'ad_1', 'status': 'ACTIVE'},
+        )
+
+        self.assertTrue(result)
+        self.assertEqual([('ad_1', 'PAUSED'), ('ad_1', 'ACTIVE')], api.status_updates)
+        self.assertEqual([('ad_1', 'creative_new')], api.attached_creatives)
+
+    def test_create_and_attach_restores_active_ad_when_attach_fails(self):
+        api = FakeCreativeUpdateApi(fail_attach=True)
+        service = FacebookAdsService(api)
+
+        with self.assertRaises(Exception):
+            service.createAndAttachNewCreativeAd(
+                'act_1',
+                FakeAdCreativeBuilder(),
+                {'id': 'ad_1', 'status': 'ACTIVE'},
+            )
+
+        self.assertEqual([('ad_1', 'PAUSED'), ('ad_1', 'ACTIVE')], api.status_updates)
 
     def test_update_continues_after_one_ad_fails_and_reports_partial_update(self):
         api = FakePartialApi()

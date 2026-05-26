@@ -78,46 +78,6 @@ class FakeApi:
         raise AssertionError('Creative data should not be requested')
 
 
-class FakeArchivedCreativeApi:
-    def __init__(self):
-        self.ad_set = FakeAdSet()
-        self.created_ad = None
-        self.attached_creative = None
-
-    def getAdCreativeData(self, ad_creative_id):
-        return {
-            'id': ad_creative_id,
-            'name': 'Archived creative',
-            'object_story_spec': {
-                'page_id': 'page_1',
-                'link_data': {
-                    'link': 'https://example.com',
-                    'image_hash': 'hash_1',
-                },
-            },
-        }
-
-    def createCreativeAd(self, ad_account_id, ad_creative_builder):
-        return {'id': 'new_creative_1'}
-
-    def attachNewCreativeAdToCreativeAd(self, ad_id, creative_id):
-        self.attached_creative = (ad_id, creative_id)
-        raise AssertionError('Archived ads should not be edited directly')
-
-    def createAd(self, ad_account_id, adset_id, name, creative_id, status='PAUSED'):
-        self.created_ad = {
-            'ad_account_id': ad_account_id,
-            'adset_id': adset_id,
-            'name': name,
-            'creative_id': creative_id,
-            'status': status,
-        }
-        return {'id': 'replacement_ad_1'}
-
-    def getAdSet(self, ad_set_id):
-        return self.ad_set
-
-
 class FakeCampaign:
     def __init__(self, smart_promotion_type=None):
         self.updated = False
@@ -131,6 +91,12 @@ class FakeCampaign:
 
     def getSmartPromotionType(self):
         return self.data.get('smart_promotion_type')
+
+    def getStatus(self):
+        return self.data.get('status')
+
+    def getName(self):
+        return self.data.get('name')
 
     def isLegacyAdvantagePlusCampaign(self):
         return self.getSmartPromotionType() in {
@@ -237,26 +203,6 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
     def test_has_creative_updates_ignores_adset_only_fields(self):
         self.assertFalse(self.service.hasCreativeUpdates({'daily_budget': '10'}))
 
-    def test_skip_archived_ads_with_existing_copy(self):
-        ads = [
-            {
-                'id': 'archived_ad',
-                'name': 'Ad one',
-                'status': 'ARCHIVED',
-                'adset_id': 'adset_1',
-            },
-            {
-                'id': 'copy_ad',
-                'name': 'Ad one (kopia z archiwum)',
-                'status': 'PAUSED',
-                'adset_id': 'adset_1',
-            },
-        ]
-
-        filteredAds = self.service.skipArchivedAdsWithExistingCopy(ads)
-
-        self.assertEqual(['copy_ad'], [ad['id'] for ad in filteredAds])
-
     def test_format_ad_update_error_adds_hint_for_unavailable_reel(self):
         message = self.service.formatAdUpdateError(Exception('error_subcode":2446289'))
 
@@ -300,8 +246,8 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
         self.assertTrue(api.ad_set.updated)
         self.assertEqual(1000, api.ad_set.data['daily_budget'])
 
-    def test_update_single_ad_creates_paused_copy_for_archived_ads(self):
-        api = FakeArchivedCreativeApi()
+    def test_update_single_ad_skips_archived_ads(self):
+        api = FakeApi()
         service = FacebookAdsService(api)
         ad = {
             'id': 'ad_1',
@@ -311,14 +257,10 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
             'adset_id': 'adset_1',
         }
 
-        service.updateSingleAd('act_1', ad, {'single_header_name': 'New title'})
+        service.updateSingleAd('act_1', ad, {'daily_budget': '10'})
 
-        self.assertIsNone(api.attached_creative)
-        self.assertEqual('act_1', api.created_ad['ad_account_id'])
-        self.assertEqual('adset_1', api.created_ad['adset_id'])
-        self.assertEqual('new_creative_1', api.created_ad['creative_id'])
-        self.assertEqual('PAUSED', api.created_ad['status'])
-        self.assertIn('kopia z archiwum', api.created_ad['name'])
+        self.assertFalse(api.creative_data_requested)
+        self.assertFalse(api.ad_set.updated)
 
     def test_update_continues_after_one_ad_fails_and_reports_partial_update(self):
         api = FakePartialApi()
@@ -329,7 +271,7 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
 
         self.assertTrue(api.ad_sets['adset_ok'].updated)
         self.assertTrue(api.campaign.updated)
-        self.assertEqual({'ACTIVE', 'PAUSED', 'ARCHIVED'}, api.requested_statuses)
+        self.assertEqual({'ACTIVE', 'PAUSED'}, api.requested_statuses)
         self.assertIn('czesciowo', str(ctx.exception))
         self.assertIn('ad_bad', str(ctx.exception))
 
@@ -342,6 +284,17 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
 
         self.assertFalse(api.ads_requested)
         self.assertIn('Advantage+ Shopping/App', str(ctx.exception))
+
+    def test_update_blocks_archived_campaign_before_loading_ads(self):
+        api = FakePartialApi(FakeCampaign())
+        api.campaign.data['status'] = 'ARCHIVED'
+        service = FacebookAdsService(api)
+
+        with self.assertRaises(Exception) as ctx:
+            service.update('act_1', 'campaign_1', {'daily_budget': '10'})
+
+        self.assertFalse(api.ads_requested)
+        self.assertIn('zarchiwizowana', str(ctx.exception))
 
 
 if __name__ == '__main__':

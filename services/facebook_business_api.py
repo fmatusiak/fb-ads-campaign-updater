@@ -127,6 +127,24 @@ class FacebookBusinessApi:
                 cause=e,
             )
 
+    def renameCampaign(self, campaignId, name):
+        try:
+            url = f"https://graph.facebook.com/{self.version}/{campaignId}"
+
+            return self.__requestJson(
+                "oznaczanie zarchiwizowanej kampanii",
+                "POST",
+                url,
+                headers=self.__headers(jsonContent=True),
+                json={"name": name},
+            )
+        except Exception as e:
+            raise AppError(
+                "Blad oznaczania zarchiwizowanej kampanii",
+                context={"campaign_id": campaignId},
+                cause=e,
+            )
+
     def copyCampaign(self, campaignId):
         try:
             url = f"https://graph.facebook.com/{self.version}/{campaignId}/copies"

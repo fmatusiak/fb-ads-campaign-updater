@@ -7,6 +7,7 @@ from text_modifier import TextModifier
 
 
 class FacebookAdsService:
+    ARCHIVED_NAME_SUFFIX = " - archived"
     UPDATABLE_AD_STATUSES = {
         'ACTIVE',
         'PAUSED',
@@ -38,7 +39,8 @@ class FacebookAdsService:
             data = self.processInputData(data)
             campaign = self.__api.getCampaignData(campaignId)
             self.ensureCampaignCanBeUpdated(campaign)
-            ads = self.__api.getAdsForCampaign(campaignId, statuses=self.UPDATABLE_AD_STATUSES)
+            campaign = self.prepareArchivedCampaignForUpdate(campaign)
+            ads = self.__api.getAdsForCampaign(campaign.getId(), statuses=self.UPDATABLE_AD_STATUSES)
             adUpdateErrors = []
 
             for ad in ads:
@@ -53,6 +55,7 @@ class FacebookAdsService:
                     detail="\n---\n".join(adUpdateErrors),
                     context={
                         "campaign_id": campaignId,
+                        "aktualizowana_kampania": campaign.getId(),
                         "liczba reklam z bledem": len(adUpdateErrors),
                     },
                     hint=(
@@ -69,6 +72,7 @@ class FacebookAdsService:
                     detail="\n---\n".join(adUpdateErrors),
                     context={
                         "campaign_id": campaignId,
+                        "aktualizowana_kampania": campaign.getId(),
                         "liczba nieudanych reklam": len(adUpdateErrors),
                     },
                     hint=(
@@ -149,20 +153,6 @@ class FacebookAdsService:
         return any(key in self.CREATIVE_UPDATE_FIELDS or self.isPlaceholderKey(key) for key in data)
 
     def ensureCampaignCanBeUpdated(self, campaign) -> None:
-        if campaign.getStatus() == 'ARCHIVED':
-            raise AppError(
-                "Kampania jest zarchiwizowana",
-                context={
-                    "campaign_id": campaign.getId(),
-                    "nazwa": campaign.getName(),
-                    "status": campaign.getStatus(),
-                },
-                hint=(
-                    "wybierz kampanie aktywna albo wylaczona (PAUSED). "
-                    "Zarchiwizowane kampanie Meta traktuje jak obiekty historyczne i nie nalezy ich aktualizowac."
-                ),
-            )
-
         if campaign.isLegacyAdvantagePlusCampaign():
             raise AppError(
                 "Kampania jest starym typem Advantage+ Shopping/App "
@@ -170,6 +160,36 @@ class FacebookAdsService:
                 "takich kampanii przez Marketing API v25. Zmigruj kampanie w Ads Managerze "
                 "do nowego Advantage+ setup i uruchom aktualizacje ponownie."
             )
+
+    def prepareArchivedCampaignForUpdate(self, campaign):
+        if campaign.getStatus() != 'ARCHIVED':
+            return campaign
+
+        originalName = campaign.getName() or f"Kampania {campaign.getId()}"
+        archivedName = self.buildArchivedName(originalName)
+
+        try:
+            self.__api.renameCampaign(campaign.getId(), archivedName)
+        except Exception:
+            pass
+
+        copiedCampaign = campaign.copy(self.__api)
+        copiedCampaign.setName(self.removeArchivedSuffix(originalName))
+        copiedCampaign.setStatus(Campaign.Status.paused)
+
+        return copiedCampaign
+
+    def buildArchivedName(self, name):
+        if name.endswith(self.ARCHIVED_NAME_SUFFIX):
+            return name
+
+        return f"{name}{self.ARCHIVED_NAME_SUFFIX}"
+
+    def removeArchivedSuffix(self, name):
+        if name.endswith(self.ARCHIVED_NAME_SUFFIX):
+            return name[:-len(self.ARCHIVED_NAME_SUFFIX)]
+
+        return name
 
     def isPlaceholderKey(self, key) -> bool:
         return isinstance(key, str) and key.startswith('{$') and key.endswith('}')

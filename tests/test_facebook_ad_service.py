@@ -79,10 +79,11 @@ class FakeApi:
 
 
 class FakeCampaign:
-    def __init__(self, smart_promotion_type=None):
+    def __init__(self, smart_promotion_type=None, campaign_id='campaign_1', name='Campaign one'):
         self.updated = False
         self.data = {
-            'id': 'campaign_1',
+            'id': campaign_id,
+            'name': name,
             'smart_promotion_type': smart_promotion_type,
         }
 
@@ -123,6 +124,9 @@ class FakeCampaign:
         self.updated = True
         return True
 
+    def copy(self, api):
+        return api.copyCampaign(self.getId())
+
 
 class FakePartialApi:
     def __init__(self, campaign=None):
@@ -131,12 +135,16 @@ class FakePartialApi:
             'adset_bad': FakeAdSet('adset_bad', should_fail=True),
         }
         self.campaign = campaign or FakeCampaign()
+        self.copied_campaign = FakeCampaign(campaign_id='campaign_copy_1', name='Campaign one')
         self.ads_requested = False
         self.requested_statuses = None
+        self.requested_campaign_id = None
+        self.renamed_campaigns = []
 
     def getAdsForCampaign(self, campaign_id, statuses=None):
         self.ads_requested = True
         self.requested_statuses = statuses
+        self.requested_campaign_id = campaign_id
 
         ads = [
             {
@@ -172,6 +180,13 @@ class FakePartialApi:
 
     def getCampaignData(self, campaign_id):
         return self.campaign
+
+    def copyCampaign(self, campaign_id):
+        return self.copied_campaign
+
+    def renameCampaign(self, campaign_id, name):
+        self.renamed_campaigns.append((campaign_id, name))
+        return {'success': True}
 
 
 class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
@@ -285,16 +300,19 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
         self.assertFalse(api.ads_requested)
         self.assertIn('Advantage+ Shopping/App', str(ctx.exception))
 
-    def test_update_blocks_archived_campaign_before_loading_ads(self):
+    def test_update_copies_archived_campaign_before_loading_ads(self):
         api = FakePartialApi(FakeCampaign())
         api.campaign.data['status'] = 'ARCHIVED'
         service = FacebookAdsService(api)
 
-        with self.assertRaises(Exception) as ctx:
+        with self.assertRaises(Exception):
             service.update('act_1', 'campaign_1', {'daily_budget': '10'})
 
-        self.assertFalse(api.ads_requested)
-        self.assertIn('zarchiwizowana', str(ctx.exception))
+        self.assertTrue(api.ads_requested)
+        self.assertEqual('campaign_copy_1', api.requested_campaign_id)
+        self.assertEqual([('campaign_1', 'Campaign one - archived')], api.renamed_campaigns)
+        self.assertTrue(api.copied_campaign.updated)
+        self.assertEqual('PAUSED', api.copied_campaign.data['status'])
 
 
 if __name__ == '__main__':

@@ -27,6 +27,7 @@ class FacebookBusinessApi:
 facebook_business_api_module.FacebookBusinessApi = FacebookBusinessApi
 sys.modules['services.facebook_business_api'] = facebook_business_api_module
 
+from app_errors import AppError
 from services.facebook_ad_service import FacebookAdsService
 
 
@@ -79,10 +80,13 @@ class FakeApi:
 
 
 class FakeCreativeUpdateApi:
-    def __init__(self, fail_attach=False):
+    def __init__(self, fail_attach=False, unavailable_creative=False):
         self.status_updates = []
         self.attached_creatives = []
+        self.name_updates = []
+        self.created_ads = []
         self.fail_attach = fail_attach
+        self.unavailable_creative = unavailable_creative
 
     def createCreativeAd(self, ad_account_id, ad_creative_builder):
         return {'id': 'creative_new'}
@@ -93,10 +97,31 @@ class FakeCreativeUpdateApi:
 
     def attachNewCreativeAdToCreativeAd(self, ad_id, creative_id):
         self.attached_creatives.append((ad_id, creative_id))
+        if self.unavailable_creative:
+            raise AppError(
+                "Blad podpinania nowej kreacji do reklamy",
+                cause=AppError("Meta odrzucila zapytanie", meta={'subcode': 2446289}),
+            )
         if self.fail_attach:
             raise Exception('Attach failed')
 
         return True
+
+    def updateAdName(self, ad_id, name):
+        self.name_updates.append((ad_id, name))
+        return {'success': True}
+
+    def createAd(self, ad_account_id, adset_id, name, creative_id, status='PAUSED'):
+        ad = {
+            'id': 'replacement_ad_1',
+            'ad_account_id': ad_account_id,
+            'adset_id': adset_id,
+            'name': name,
+            'creative_id': creative_id,
+            'status': status,
+        }
+        self.created_ads.append(ad)
+        return ad
 
 
 class FakeCampaign:
@@ -298,6 +323,22 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
         self.assertFalse(api.creative_data_requested)
         self.assertFalse(api.ad_set.updated)
 
+    def test_update_single_ad_skips_old_creative_ads(self):
+        api = FakeApi()
+        service = FacebookAdsService(api)
+        ad = {
+            'id': 'ad_1',
+            'name': 'Test ad - old creative',
+            'status': 'PAUSED',
+            'creative': {'id': 'creative_1'},
+            'adset_id': 'adset_1',
+        }
+
+        service.updateSingleAd('act_1', ad, {'daily_budget': '10'})
+
+        self.assertFalse(api.creative_data_requested)
+        self.assertFalse(api.ad_set.updated)
+
     def test_create_and_attach_pauses_active_ad_before_creative_swap(self):
         api = FakeCreativeUpdateApi()
         service = FacebookAdsService(api)
@@ -324,6 +365,36 @@ class FacebookAdsServiceUpdateCreativeAdsTests(unittest.TestCase):
             )
 
         self.assertEqual([('ad_1', 'PAUSED'), ('ad_1', 'ACTIVE')], api.status_updates)
+
+    def test_create_and_attach_creates_paused_replacement_for_unavailable_creative(self):
+        api = FakeCreativeUpdateApi(unavailable_creative=True)
+        service = FacebookAdsService(api)
+
+        result = service.createAndAttachNewCreativeAd(
+            'act_1',
+            FakeAdCreativeBuilder(),
+            {
+                'id': 'ad_1',
+                'name': 'Problem ad',
+                'status': 'ACTIVE',
+                'adset_id': 'adset_1',
+            },
+        )
+
+        self.assertTrue(result)
+        self.assertEqual([('ad_1', 'PAUSED'), ('ad_1', 'PAUSED')], api.status_updates)
+        self.assertEqual([('ad_1', 'Problem ad - old creative')], api.name_updates)
+        self.assertEqual(
+            [{
+                'id': 'replacement_ad_1',
+                'ad_account_id': 'act_1',
+                'adset_id': 'adset_1',
+                'name': 'Problem ad',
+                'creative_id': 'creative_new',
+                'status': 'PAUSED',
+            }],
+            api.created_ads,
+        )
 
     def test_update_continues_after_one_ad_fails_and_reports_partial_update(self):
         api = FakePartialApi()

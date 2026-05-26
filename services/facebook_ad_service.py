@@ -8,6 +8,7 @@ from text_modifier import TextModifier
 
 class FacebookAdsService:
     ARCHIVED_NAME_SUFFIX = " - archived"
+    OLD_CREATIVE_AD_SUFFIX = " - old creative"
     UPDATABLE_AD_STATUSES = {
         'ACTIVE',
         'PAUSED',
@@ -113,6 +114,8 @@ class FacebookAdsService:
             adStatus = ad.get('status')
             if adStatus and adStatus not in self.UPDATABLE_AD_STATUSES:
                 return
+            if self.isOldCreativeAd(adName):
+                return
 
             if self.hasCreativeUpdates(data):
                 stage = "sprawdzenie ID kreacji"
@@ -190,6 +193,18 @@ class FacebookAdsService:
             return name[:-len(self.ARCHIVED_NAME_SUFFIX)]
 
         return name
+
+    def isOldCreativeAd(self, name):
+        return isinstance(name, str) and name.endswith(self.OLD_CREATIVE_AD_SUFFIX)
+
+    def buildOldCreativeAdName(self, name):
+        if not name:
+            name = "Reklama"
+
+        if self.isOldCreativeAd(name):
+            return name
+
+        return f"{name}{self.OLD_CREATIVE_AD_SUFFIX}"
 
     def isPlaceholderKey(self, key) -> bool:
         return isinstance(key, str) and key.startswith('{$') and key.endswith('}')
@@ -297,18 +312,57 @@ class FacebookAdsService:
 
         try:
             attached = self.__api.attachNewCreativeAdToCreativeAd(adId, adCreative['id'])
-        except Exception:
-            if pausedForCreativeUpdate:
-                try:
-                    self.__api.updateAdStatus(adId, adStatus)
-                except Exception:
-                    pass
+        except Exception as error:
+            if self.isUnavailableCreativeError(error):
+                return self.createPausedReplacementAd(adAccountId, ad, adCreative['id'])
+
+            self.restoreAdStatus(adId, adStatus, pausedForCreativeUpdate)
             raise
 
-        if pausedForCreativeUpdate:
-            self.__api.updateAdStatus(adId, adStatus)
+        self.restoreAdStatus(adId, adStatus, pausedForCreativeUpdate)
 
         return attached
+
+    def restoreAdStatus(self, adId, adStatus, shouldRestore):
+        if shouldRestore:
+            try:
+                self.__api.updateAdStatus(adId, adStatus)
+            except Exception:
+                pass
+
+    def createPausedReplacementAd(self, adAccountId, ad, creativeId):
+        adId = ad.get('id')
+        oldName = ad.get('name')
+        newName = oldName or "Reklama"
+
+        try:
+            self.__api.updateAdName(adId, self.buildOldCreativeAdName(oldName))
+        except Exception:
+            pass
+
+        try:
+            self.__api.updateAdStatus(adId, 'PAUSED')
+        except Exception:
+            pass
+
+        replacementAd = self.__api.createAd(
+            adAccountId,
+            ad.get('adset_id'),
+            newName,
+            creativeId,
+            status='PAUSED',
+        )
+
+        return bool(replacementAd and replacementAd.get('id'))
+
+    def isUnavailableCreativeError(self, error):
+        if isinstance(error, AppError):
+            if error.meta.get('subcode') == 2446289:
+                return True
+
+            return self.isUnavailableCreativeError(error.cause)
+
+        return error is not None and '2446289' in str(error)
 
     def updateAdSet(self, adSetId: str, data: dict) -> None:
         changedFields = []

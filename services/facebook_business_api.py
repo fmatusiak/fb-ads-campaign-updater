@@ -290,6 +290,50 @@ class FacebookBusinessApi:
                 cause=e,
             )
 
+    def createAd(self, adAccountId, adSetId, name, creativeId, status='PAUSED'):
+        try:
+            url = f"https://graph.facebook.com/{self.version}/{adAccountId}/ads"
+            data = {
+                "name": name,
+                "adset_id": adSetId,
+                "creative": {
+                    "creative_id": creativeId,
+                },
+                "status": status,
+            }
+
+            return self.__requestJson(
+                "tworzenie reklamy z nowa kreacja",
+                "POST",
+                url,
+                headers=self.__headers(jsonContent=True),
+                json=data,
+            )
+        except Exception as e:
+            raise AppError(
+                "Blad tworzenia reklamy Ad",
+                context={"ad_account_id": adAccountId, "adset_id": adSetId, "creative_id": creativeId},
+                cause=e,
+            )
+
+    def updateAdName(self, adId, name):
+        try:
+            url = f"https://graph.facebook.com/{self.version}/{adId}"
+
+            return self.__requestJson(
+                "zmiana nazwy reklamy",
+                "POST",
+                url,
+                headers=self.__headers(jsonContent=True),
+                json={"name": name},
+            )
+        except Exception as e:
+            raise AppError(
+                "Blad zmiany nazwy reklamy",
+                context={"ad_id": adId, "name": name},
+                cause=e,
+            )
+
     def updateAdStatus(self, adId, status):
         try:
             url = f"https://graph.facebook.com/{self.version}/{adId}"
